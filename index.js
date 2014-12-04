@@ -114,7 +114,12 @@ module.exports = function(content) {
 
      // output += "var AutoCatApp = React.createClass({displayName: 'AutoCatApp', render: function() {return React.createElement('div', null, __AUTOCAT_COMPONENTS__.map(function(Component){ return React.createElement(Component, null)}), ' '); }  });  React.render(React.createElement(AutoCatApp, {iconName: 'John', tooltipLabel: 'adsfadsf'}), document.body);";
 
-      output += "var AutoCatApp = React.createClass({displayName: 'AutoCatApp', render: function() {return React.createElement('div', null, __AUTOCAT_COMPONENTS__.map(function(c){ return c.props }), ' ');  } });  React.render(React.createElement(AutoCatApp, {iconName: 'John', tooltipLabel: 'adsfadsf'}), document.body);";
+      output += "var AutoCatApp = React.createClass({displayName: 'AutoCatApp', render: function() { return React.createElement('ul', null, __AUTOCAT_COMPONENTS__.map(function(c){ return React.createElement('li', null, JSON.stringify(c.props), ' ') }), ' '); } });  React.render(React.createElement(AutoCatApp, {iconName: 'John', tooltipLabel: 'adsfadsf'}), document.body);";
+
+
+
+
+
 
 
     }
