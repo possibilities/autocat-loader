@@ -1,0 +1,16 @@
+{
+  "name": "autocat-loader",
+  "version": "0.0.0",
+  "description": "A webpack loader to autogenerate a component catalog",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gurdas Nijor",
+  "license": "ISC",
+  "dependencies": {
+    "detective": "^4.0.0",
+    "falafel": "^0.3.1",
+    "lodash": "^2.4.1"
+  }
+}
