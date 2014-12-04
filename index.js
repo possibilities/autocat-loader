@@ -5,9 +5,9 @@ var _  = require('lodash');
 var detective = require('detective');
 var fs = require('fs');
 
+var path = require('path');
 
-
-
+var REACT_CLASS_RE = /\.createClass/;
 
 
 function getComponentName(object) {
@@ -23,9 +23,6 @@ function getComponentName(object) {
 
   }
 }
-
-
-
 
 
 /**
@@ -66,68 +63,44 @@ function parseProps(source){
 
 
 
-module.exports = function(content) {
+var componentTemplateFunc = _.template(fs.readFileSync(require.resolve('./component.template'), 'utf8'));
+var indexTemplateFunc = _.template(fs.readFileSync(require.resolve('./index.template'), 'utf8'));
 
+
+module.exports = function(content, map) {
 
   if (this.cacheable) {
     this.cacheable();
   }
 
 
+  var resourcePath = this.resourcePath,
+    filename = path.basename(resourcePath);
 
   var self = this;
-  var output = content;
 
 
   if (!/node_modules/.test(this.context)){
 
-   // console.log("CONTEXT: ", this.context);
-   // console.log("REQUEST: ", this.request.split('!')[this.request.split('!').length - 1] );
-
-    ///Users/opengov/WebstormProjects/DataManagerSandbox/app/js/index.js
-
-
-    //npm ivar src = fs.readFileSync("/Users/opengov/WebstormProjects/DataManagerSandbox/app/js/index.js");
-   // var requires = detective(content);
-
-
-
-
-   // console.log("Require tree", Object.keys(this._compiler));
-
-
-    //console.log("RESOLVED SYNC: ", this.resolveSync(this.context, self.options.entry.main[2] ));
-
-
- //   console.log("ENTRY: ", self.options.entry.main[2]);
-
-
-
     var curPath = this.request.split('!')[this.request.split('!').length - 1];
     var entryPath = self.options.entry.main[2].replace(".", "");
 
-   // console.log(curPath, entryPath);
 
     if( curPath.indexOf(entryPath) != -1){
-
-      console.log(curPath, entryPath);
-
-     // output += "var AutoCatApp = React.createClass({displayName: 'AutoCatApp', render: function() {return React.createElement('div', null, __AUTOCAT_COMPONENTS__.map(function(Component){ return React.createElement(Component, null)}), ' '); }  });  React.render(React.createElement(AutoCatApp, {iconName: 'John', tooltipLabel: 'adsfadsf'}), document.body);";
-
-      output += "var AutoCatApp = React.createClass({displayName: 'AutoCatApp', render: function() { return React.createElement('ul', null, __AUTOCAT_COMPONENTS__.map(function(c){ return React.createElement('li', null, JSON.stringify(c.props), ' ') }), ' '); } });  React.render(React.createElement(AutoCatApp, {iconName: 'John', tooltipLabel: 'adsfadsf'}), document.body);";
-
-
-
-
-
-
-
+      return indexTemplateFunc({source: content});
     }
 
 
     else{
 
-      output = falafel(content, function (node) {
+      //Ignore modules without React components
+
+      if (!content.match(REACT_CLASS_RE)) {
+        console.log("IGNORED ",this.request.split('!')[this.request.split('!').length - 1]);
+        return content;
+      }
+
+      var transformedSource = falafel(content, function (node) {
         if (node.type === "AssignmentExpression" &&
             node.left.type === "MemberExpression" &&
             node.left.object.type === "Identifier" &&
@@ -136,61 +109,19 @@ module.exports = function(content) {
             node.left.property.name === 'exports' &&
             node.right.type == 'Identifier')
             {
-              console.log(node.source(), node.right.type);
 
-              console.log(parseProps(content));
+              var parsedPropArr = parseProps(content) || [];
+              var transformedNode = componentTemplateFunc({exportNode: node, propsDescriptor: JSON.stringify(parsedPropArr), exportNodeSource: node.source()});
 
-
-              node.update("global.__AUTOCAT_COMPONENTS__ = ( typeof __AUTOCAT_COMPONENTS__ != 'undefined' && __AUTOCAT_COMPONENTS__ instanceof Array ) ? __AUTOCAT_COMPONENTS__ : [];  global.__AUTOCAT_COMPONENTS__.push({name: '"+ node.right.name +"', component: "+node.right.name +", props: "+ JSON.stringify(parseProps(content)) +" });" + node.source());
+              node.update(transformedNode);
             }
-
-
-
-
       });
 
-
-
+      return "" + transformedSource;
     }
-
-
-
-
-
-
-
-
-    /*
-    output = falafel(content, function (node) {
-      if (node.type === 'Property' && node.key.name === 'render') {
-        node.parent.properties
-          .filter(function (p) {
-            return p.type == "Property" && p.key.name == "render"
-          })
-          .map(function (p) {
-            return p.value.body.body.filter(function (b) {
-              return b.type === "ReturnStatement";
-            })[0].argument;
-          })
-          .forEach(function (p) {
-            p.update("React.createElement('div',  {style: {border: '3px solid red'}}, 'NAME: ' + this.constructor.displayName  +  ' PROPS: ' + JSON.stringify(this.props) +  '---STATE: ' + JSON.stringify(this.state), " + p.source() + "   )");
-          });
-      }
-    });
-
-    */
-
-
-  //  output =  "module.exports = global."+  +" = " +  "require(" + JSON.stringify("-!" + content) + ");";
-
-
-
   }
 
   else{
-    output = content;
+    return content;
   }
-
-  return "" + output;
-
 }

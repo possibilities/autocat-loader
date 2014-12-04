@@ -1,0 +1,9 @@
+
+
+global.__AUTOCAT_COMPONENTS__ = ( typeof __AUTOCAT_COMPONENTS__ != 'undefined' && __AUTOCAT_COMPONENTS__ instanceof Array ) ? __AUTOCAT_COMPONENTS__ : [];
+
+
+global.__AUTOCAT_COMPONENTS__.push({name: '<%= exportNode.right.name  %>', component: <%= exportNode.right.name  %>, props: <%= propsDescriptor  %>});
+
+
+<%= exportNodeSource %>

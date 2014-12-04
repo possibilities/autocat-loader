@@ -1,0 +1,13 @@
+
+
+<%= source %>
+
+var AutoCatApp = React.createClass({
+  displayName: 'AutoCatApp',
+  render: function() {
+    return React.createElement('ul', null, __AUTOCAT_COMPONENTS__.map(function(c){ return React.createElement('li', null, JSON.stringify(c.props), ' ') }), ' ');
+   }
+});
+
+
+React.render(React.createElement(AutoCatApp, null), document.body);
