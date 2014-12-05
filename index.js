@@ -8,7 +8,6 @@ var fs = require('fs');
 var path = require('path');
 
 
-var reactTools = require('react-tools');
 
 
 
@@ -71,7 +70,7 @@ function parseProps(source){
 
 
 var componentTemplateFunc = _.template(fs.readFileSync(require.resolve('./component.template'), 'utf8'));
-var autoCatIndexSource = reactTools.transform(fs.readFileSync(require.resolve('./autocat_index.js'), 'utf8'), {harmony: true});
+
 
 
 module.exports = function(content, map) {
@@ -80,18 +79,14 @@ module.exports = function(content, map) {
     this.cacheable();
   }
 
-
   var resourcePath = this.resourcePath,
     filename = path.basename(resourcePath);
 
-
   var self = this;
 
-  var ignoredModules = ["app.js", "_tabcontainer.js", "mapping_step.js"];
 
- // var ignoredModules = [];
 
-  //var includedModules = ["file_icon.js"]
+  var ignoredModules = ["app.js", "_tabcontainer.js", "mapping_step.js", "devcard.js", "autocat_index.js", "uploader_overlay.js", "global_sidenav.js"];
 
 
   if (!/node_modules/.test(this.context) && !_.contains(ignoredModules, filename)){
@@ -105,21 +100,33 @@ module.exports = function(content, map) {
 
 
 
+    //The entry module we're going to hijack with AutoCat
+
     if( curPath.indexOf(entryPath) != -1){
       //return indexTemplateFunc({source: content});
-      console.log("IN THE INDEX", entryPath)
-      return content + " \n\n\n\n" + autoCatIndexSource;
+
+      var styleRequire = "require('" +require.resolve('./autocat.scss') + "');  var AutoCatApp = require('"  + require.resolve('./autocat_index.js') + "');     React.render(React.createElement(AutoCatApp, null), document.body);";
+
+
+      var o = content + styleRequire;
+
+     // console.log(o);
+
+      return  o;
 
     }
 
 
-    else{
-
-      //Ignore modules without React components
 
 
+
+
+
+  else{
+
+      //Ignore modules without React top level api calls
       if (!content.match(REACT_CLASS_RE)) {
-        console.log("IGNORED ",this.request.split('!')[this.request.split('!').length - 1]);
+       // console.log("IGNORED ",this.request.split('!')[this.request.split('!').length - 1]);
         return content;
       }
 
@@ -135,7 +142,18 @@ module.exports = function(content, map) {
             {
 
               var parsedPropArr = parseProps(content) || [];
-              var transformedNode = componentTemplateFunc({componentName: node.right.name, propsDescriptor: JSON.stringify(parsedPropArr), exportNodeSource: node.source()});
+
+
+            //  console.log(parsedPropArr);
+
+
+              var transformedNode = componentTemplateFunc(
+                {
+                  componentName: node.right.name,
+                  propsDescriptor: JSON.stringify(parsedPropArr),
+                  fileName: filename,
+                  exportNodeSource: node.source()
+                });
 
               node.update(transformedNode);
             }
