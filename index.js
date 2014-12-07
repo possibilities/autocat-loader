@@ -1,8 +1,5 @@
 var falafel = require('falafel');
 var _  = require('lodash');
-
-
-var detective = require('detective');
 var fs = require('fs');
 
 var path = require('path');
@@ -91,36 +88,24 @@ module.exports = function(content, map) {
 
   if (!/node_modules/.test(this.context) && !_.contains(ignoredModules, filename)){
 
-
-
     var curPath = this.request.split('!')[this.request.split('!').length - 1];
     var entryPath =  self.options.entry.main[2].replace(".", "");
-
-      //self.options.entry[1].replace(".", "");
-
-
 
     //The entry module we're going to hijack with AutoCat
 
     if( curPath.indexOf(entryPath) != -1){
-      //return indexTemplateFunc({source: content});
 
-      var styleRequire = "require('" +require.resolve('./autocat.scss') + "');  var AutoCatApp = require('"  + require.resolve('./autocat_index.js') + "');     React.render(React.createElement(AutoCatApp, null), document.body);";
+      var injectedSource = [
+       "require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/autocat-loader/autocat.css');",
+        "var React = require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/react');",
+        "var AutoCatApp = require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/autocat-loader/autocat_index.js');",
+        "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
+      ].join(" ");
 
+      console.log(injectedSource);
 
-      var o = content + styleRequire;
-
-     // console.log(o);
-
-      return  o;
-
+      return injectedSource;
     }
-
-
-
-
-
-
 
   else{
 

@@ -1,4 +1,6 @@
-var React =  require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/react');
+
+
+var React =  require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/react/addons');
 
 
 /**
@@ -69,15 +71,10 @@ var DevCard = React.createClass({
 
   tryMountChild: function () {
     var mountNode = this.refs.mount.getDOMNode();
-    var ChildComponent = React.addons.cloneWithProps(React.Children.only(this.props.children), _.mapValues(this.state, function (v, k) {
+    var props = _.mapValues(this.state, function (v, k) {
       return v.data;
-    }));
-
-    try {
-      React.unmountComponentAtNode(mountNode);
-    }
-    catch (e) {
-    }
+    });
+    var ChildComponent = React.addons.cloneWithProps(React.Children.only(this.props.children), props);
 
     try {
       React.render(
@@ -87,7 +84,12 @@ var DevCard = React.createClass({
     }
     catch (err) {
       React.render(
-        <div className="error">{err.toString()}</div>,
+        <div className="ui-alert-box whoops">
+            <span className="icon-exclamation-1"></span>
+            <strong>{err.toString()}</strong>
+           {err.stack}
+
+        </div>,
         mountNode
       );
     }

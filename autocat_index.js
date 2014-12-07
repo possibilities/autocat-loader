@@ -3,6 +3,17 @@ var React =  require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_mo
 
 var DevCard = require('./devcard');
 
+//Need to setup this
+var ctx = require.context("/Users/opengov/WebstormProjects/DataManagerSandbox/app/js", true, /.*\.(js)$/)
+
+
+ctx.keys().forEach(function(key){
+  console.log(key);
+  ctx(key);
+});
+
+
+
 
 var AutoCatApp = React.createClass({
   render: function () {
