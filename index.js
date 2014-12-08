@@ -88,17 +88,27 @@ module.exports = function(content, map) {
 
   if (!/node_modules/.test(this.context) && !_.contains(ignoredModules, filename)){
 
-    var curPath = this.request.split('!')[this.request.split('!').length - 1];
+
+    console.log(filename);
+
+
+    var curPath = this.resourcePath;
     var entryPath =  self.options.entry.main[2].replace(".", "");
+
+
+    var hostPath = "/Users/opengov/WebstormProjects/DataManagerSandbox/";
+
 
     //The entry module we're going to hijack with AutoCat
 
     if( curPath.indexOf(entryPath) != -1){
 
+      console.log("PATH CONTEXT:  ", this.context);
+
       var injectedSource = [
-       "require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/autocat-loader/autocat.css');",
-        "var React = require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/react');",
-        "var AutoCatApp = require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/autocat-loader/autocat_index.js');",
+       "require('"+ hostPath +"node_modules/autocat-loader/autocat.css');",
+        "var React = require('"+ hostPath +"node_modules/react');",
+        "var AutoCatApp = require('"+ hostPath +"node_modules/autocat-loader/autocat_index.js');",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
 

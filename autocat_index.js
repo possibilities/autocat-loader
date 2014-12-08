@@ -1,17 +1,15 @@
 
 var React =  require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/react');
-
 var DevCard = require('./devcard');
 
-//Need to setup this
-var ctx = require.context("/Users/opengov/WebstormProjects/DataManagerSandbox/app/js", true, /.*\.(js)$/)
 
+//Need to setup this context to ensure that webpack traverses all js files from the root directory
+var ctx = require.context("/Users/opengov/WebstormProjects/DataManagerSandbox/app/js", true, /\.js$/);
 
 ctx.keys().forEach(function(key){
   console.log(key);
   ctx(key);
 });
-
 
 
 

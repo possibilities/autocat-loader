@@ -1,4 +1,5 @@
 
+var _ = require('lodash');
 
 var React =  require('/Users/opengov/WebstormProjects/DataManagerSandbox/node_modules/react/addons');
 
@@ -82,6 +83,7 @@ var DevCard = React.createClass({
         mountNode
       );
     }
+
     catch (err) {
       React.render(
         <div className="ui-alert-box whoops">
