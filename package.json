@@ -14,7 +14,7 @@
     "lodash": "^2.4.1",
     "parent-require": "^1.0.0"
   },
-  "peerDependencies": {
+  "devDependencies": {
     "react": "0.12.0"
   }
 }

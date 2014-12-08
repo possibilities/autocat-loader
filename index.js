@@ -70,7 +70,21 @@ var componentTemplateFunc = _.template(fs.readFileSync(require.resolve('./compon
 
 
 
+
+function getEntryArray(entry){
+  if(_.isString(entry)){
+    return [entry];
+  }
+  else if (_.isArray(entry)){
+    return _.filter(entry, function(e){ return e.indexOf("webpack") === -1 });
+  }
+}
+
+
 module.exports = function(content, map) {
+
+  var hostPath = "/Users/opengov/WebstormProjects/DataManagerSandbox/";
+  var self = this;
 
   if (this.cacheable) {
     this.cacheable();
@@ -79,8 +93,11 @@ module.exports = function(content, map) {
   var resourcePath = this.resourcePath,
     filename = path.basename(resourcePath);
 
-  var self = this;
 
+  //Parse out all potential app entry points
+  var entryPaths = !_.isPlainObject(this.options.entry) ?
+                    getEntryArray(this.options.entry) :
+                    _(this.options.entry).map(function(val, key){ return getEntryArray(val); }).flatten().value();
 
 
   var ignoredModules = ["app.js", "_tabcontainer.js", "mapping_step.js", "devcard.js", "autocat_index.js", "uploader_overlay.js", "global_sidenav.js"];
@@ -88,20 +105,10 @@ module.exports = function(content, map) {
 
   if (!/node_modules/.test(this.context) && !_.contains(ignoredModules, filename)){
 
-
-    console.log(filename);
-
-
     var curPath = this.resourcePath;
-    var entryPath =  self.options.entry.main[2].replace(".", "");
 
-
-    var hostPath = "/Users/opengov/WebstormProjects/DataManagerSandbox/";
-
-
-    //The entry module we're going to hijack with AutoCat
-
-    if( curPath.indexOf(entryPath) != -1){
+    //The entry module(s) we're going to hijack with AutoCat
+    if( _.any(entryPaths, function(e){ return curPath.indexOf(e.replace(".", "")) !== -1 })){
 
       console.log("PATH CONTEXT:  ", this.context);
 
