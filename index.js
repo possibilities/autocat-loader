@@ -83,7 +83,7 @@ function getEntryArray(entry){
 
 module.exports = function(content, map) {
 
-  var hostPath = "/Users/opengov/WebstormProjects/DataManagerSandbox/";
+
   var self = this;
 
   if (this.cacheable) {
@@ -107,15 +107,20 @@ module.exports = function(content, map) {
 
     var curPath = this.resourcePath;
 
+
     //The entry module(s) we're going to hijack with AutoCat
     if( _.any(entryPaths, function(e){ return curPath.indexOf(e.replace(".", "")) !== -1 })){
 
-      console.log("PATH CONTEXT:  ", this.context);
 
       var injectedSource = [
-       "require('"+ hostPath +"node_modules/autocat-loader/autocat.css');",
-        "var React = require('"+ hostPath +"node_modules/react');",
-        "var AutoCatApp = require('"+ hostPath +"node_modules/autocat-loader/autocat_index.js');",
+       "require('"+ require.resolve('./autocat.css')+ "');",
+        "var React = require('react');",
+        "var ctx = require.context('" + this.context + "', true, /\.js$/);",
+        "ctx.keys().forEach(function(key){",
+          "console.log(key);",
+          "ctx(key);",
+        "});",
+        "var AutoCatApp = require('"+ require.resolve('./autocat_index.js') +"')(React);",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
 
