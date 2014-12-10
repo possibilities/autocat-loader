@@ -1,5 +1,5 @@
+"use strict"
 
-var _ = require('lodash');
 
 
 /**
@@ -19,7 +19,7 @@ module.exports = function(React){
 
     getInitialState: function () {
 
-      var foldedProps = _.reduce(this.props.initState, function(memo, e) { memo[e.name] = {type: e.type, isRequired: e.isRequired, data: ({number: 0, array: [], string: ""})[e.type] }; return memo;  }, {});
+      var foldedProps = this.props.initState.reduce(function(memo, e) { memo[e.name] = {type: e.type, isRequired: e.isRequired, data: ({number: 0, array: [], string: ""})[e.type] }; return memo;  }, {});
       return foldedProps;
     },
 
@@ -32,14 +32,16 @@ module.exports = function(React){
       var component = React.Children.only(this.props.children);
       var name = this.props.componentName;
       var fileName = this.props.fileName;
-      var propString = _.map(this.state, function (val, key) {
-        return key + "={" + val.data + "}";
-      }).join(" ");
+      var propString = Object.keys(this.state).length > 0 ? Object.keys(this.state).map(function(key, index) {
+        return key + "={" + this.state[key].data + "}";
+      }.bind(this)).join(" ") : "";
+
+
       var markupString = "<" + name + " " + propString + " />";
 
-      var boundInputs = !_.isEmpty(this.state) ? _.map(this.state, function (val, field) {
-        return this.renderTypedInput(field);
-      }, this) : null;
+      var boundInputs = Object.keys(this.state).length > 0  ?  Object.keys(this.state).map(function(key, index) {
+        return this.renderTypedInput(key);
+      }.bind(this)) : null
 
       return (
         <div className="ui-card__content" >
@@ -71,9 +73,21 @@ module.exports = function(React){
 
     tryMountChild: function () {
       var mountNode = this.refs.mount.getDOMNode();
-      var props = _.mapValues(this.state, function (v, k) {
-        return v.data;
-      });
+
+      var props = Object.keys(this.state)
+        .map(function (value, index) {
+          var ret = {};
+          ret[value] = this.state[value].data;
+          return ret;
+        }.bind(this))
+        .reduce(function (agg, val) {
+          var key = Object.keys(val)[0];
+          agg[key] = val[key];
+          return agg;
+        }, {});
+
+      console.log(props);
+
       var ChildComponent = React.addons.cloneWithProps(React.Children.only(this.props.children), props);
 
       try {
@@ -116,7 +130,7 @@ module.exports = function(React){
           }
           catch (e) {
             //TODO: figure out how to handle invalid input being live-entered -- could mean not using 'controlled components'?
-            var errColl = this.state.errors ? _.cloneDeep(this.state.errors) : [];
+            var errColl = this.state.errors ? this.state.errors : [];
             errColl.push(e.message);
             this.setState({errors: errColl});
 

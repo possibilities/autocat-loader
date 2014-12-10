@@ -103,24 +103,31 @@ module.exports = function(content, map) {
   var ignoredModules = ["app.js", "_tabcontainer.js", "mapping_step.js", "devcard.js", "autocat_index.js", "uploader_overlay.js", "global_sidenav.js"];
 
 
+
   if (!/node_modules/.test(this.context) && !_.contains(ignoredModules, filename)){
 
     var curPath = this.resourcePath;
 
-
     //The entry module(s) we're going to hijack with AutoCat
     if( _.any(entryPaths, function(e){ return curPath.indexOf(e.replace(".", "")) !== -1 })){
 
+       var componentPath = this.context; //'/Users/opengov/WebstormProjects/react-material/components';
+
+
+      //This can become a normal require.resolve() when not npm-linked to bring in autocat index and other stuff injected
+      //by this loader
+      var modulePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/autocat-loader';  //'/Users/opengov/WebstormProjects/react-material/node_modules/autocat-loader';
+
 
       var injectedSource = [
-       "require('"+ require.resolve('./autocat.css')+ "');",
-        "var React = require('react');",
-        "var ctx = require.context('" + this.context + "', true, /\.js$/);",
+       "require('"+ modulePath + '/autocat.css'+ "');",
+        "var React = require('react/addons');",
+        "var ctx = require.context('" + componentPath + "', true, /\.js$/);",
         "ctx.keys().forEach(function(key){",
           "console.log(key);",
           "ctx(key);",
         "});",
-        "var AutoCatApp = require('"+ require.resolve('./autocat_index.js') +"')(React);",
+        "var AutoCatApp = require('"+ modulePath + '/autocat_index.js' +"')(React);",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
 
