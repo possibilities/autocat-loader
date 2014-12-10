@@ -1,12 +1,14 @@
 
 
-.ui-nav-main{
+* { box-sizing: border-box; }
 
-
-
+aside.ac-sidebar {
+    width: 20%;
+    position:fixed;
+    left:0;
+    top:0;
 }
 
-.ui-main{
-
-
+section.ac-section {
+    padding-left: 20%;
 }

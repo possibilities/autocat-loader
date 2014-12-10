@@ -18,8 +18,14 @@ module.exports = function(React){
     },
 
     getInitialState: function () {
+      var foldedProps = this.props.initState.reduce(function(memo, e) {
+        memo[e.name] = {
+          type: e.type,
+          isRequired: e.isRequired,
+          data: ({number: 0, array: [], string: ""})[e.type]
+        }; return memo;
+      }, {});
 
-      var foldedProps = this.props.initState.reduce(function(memo, e) { memo[e.name] = {type: e.type, isRequired: e.isRequired, data: ({number: 0, array: [], string: ""})[e.type] }; return memo;  }, {});
       return foldedProps;
     },
 
@@ -69,6 +75,15 @@ module.exports = function(React){
         </div>
       );
     },
+
+    /*componentWillUpdate: function(nextProps, nextState){
+      console.log(nextProps);
+
+      if(nextProps.componentName !== this.props.componentName){
+        this.tryMountChild();
+      }
+
+    },*/
 
 
     tryMountChild: function () {
@@ -122,9 +137,7 @@ module.exports = function(React){
         if (type === "array" || type === "object") {
           try {
             val = JSON.parse(val);
-
             newData[field] = {data: val, type: type};
-
             this.setState(newData);
 
           }
@@ -139,19 +152,12 @@ module.exports = function(React){
         else {
           newData[field] = {data: val, type: type};
           this.setState(newData);
-
-
           this.tryMountChild();
-
         }
-
-
       }.bind(this);
 
 
       var inputVal = (type === "array" || type === "object") ? JSON.stringify(this.state[field]['data']) : this.state[field]['data'];
-
-
       var inputTypeHash = {array: "text", object: "text", string: "text", date: "date", number: "number"};
 
 

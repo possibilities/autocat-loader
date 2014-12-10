@@ -156,11 +156,6 @@ module.exports = function(content, map) {
             {
 
               var parsedPropArr = parseProps(content) || [];
-
-
-            //  console.log(parsedPropArr);
-
-
               var transformedNode = componentTemplateFunc(
                 {
                   componentName: node.right.name,
