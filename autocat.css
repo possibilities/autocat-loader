@@ -13,3 +13,15 @@ aside.ac-sidebar {
 section.ac-section {
     padding-left: 20%;
 }
+
+
+
+.component-harness__metadata{
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #eaeaea;
+    color: #737373;
+    height: 70px;
+    line-height: 70px;
+    margin-bottom: 20px;
+}
+

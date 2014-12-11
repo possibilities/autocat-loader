@@ -83,7 +83,6 @@ function getEntryArray(entry){
 
 module.exports = function(content, map) {
 
-
   var self = this;
 
   if (this.cacheable) {
@@ -100,11 +99,8 @@ module.exports = function(content, map) {
                     _(this.options.entry).map(function(val, key){ return getEntryArray(val); }).flatten().value();
 
 
-  var ignoredModules = [ "devcard.js", "autocat_index.js"];
 
-//"app.js", "_tabcontainer.js", "uploader_overlay.js",,  "global_sidenav.js"
-
-  if (!/node_modules/.test(this.context) && !_.contains(ignoredModules, filename)){
+  if (!/node_modules/.test(this.context) && filename !== 'autocat_index.js'){
 
     var curPath = this.resourcePath;
 
@@ -112,10 +108,6 @@ module.exports = function(content, map) {
     if( _.any(entryPaths, function(e){ return curPath.indexOf(e.replace(".", "")) !== -1 })){
 
        var componentPath = this.context; //'/Users/opengov/WebstormProjects/react-material/components';
-
-
-      //This can become a normal require.resolve() when not npm-linked to bring in autocat index and other stuff injected
-      //by this loader
 
       var nodePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/';
       var modulePath = nodePath + 'autocat-loader';  //'/Users/opengov/WebstormProjects/react-material/node_modules/autocat-loader';
@@ -142,7 +134,6 @@ module.exports = function(content, map) {
 
       //Ignore modules without React top level api calls
       if (!content.match(REACT_CLASS_RE)) {
-       // console.log("IGNORED ",this.request.split('!')[this.request.split('!').length - 1]);
         return content;
       }
 
@@ -163,6 +154,7 @@ module.exports = function(content, map) {
                   componentName: node.right.name,
                   propsDescriptor: JSON.stringify(parsedPropArr),
                   fileName: filename,
+                  fullPath: resourcePath,
                   exportNodeSource: node.source()
                 });
 

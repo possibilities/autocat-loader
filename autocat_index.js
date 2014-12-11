@@ -15,7 +15,9 @@ module.exports = function(React){
   });
 
 
-
+  /**
+   * Renders an appropriate form input and binds a change handler given a data type
+   */
   var TypedInput = React.createClass({
     getInitialState: function(){
       return {valueBuffer: "", errors: []};
@@ -26,6 +28,7 @@ module.exports = function(React){
       var type = this.props.controlStateDescriptor.type;
       var field = this.props.controlStateDescriptor.name;
 
+      //TODO:  Add richer controls for object and array editing
       if (type === "array" || type === "object") {
         try {
           val = JSON.parse(val);
@@ -36,7 +39,6 @@ module.exports = function(React){
           errColl.push(e.message);
 
           this.setState({errors: errColl});
-
         }
       }
       else {
@@ -109,6 +111,9 @@ module.exports = function(React){
     }
   });
 
+
+
+
   var AutoCat = React.createClass({
 
     getInitialState: function(){
@@ -117,7 +122,6 @@ module.exports = function(React){
         selectedComponent: null
       };
     },
-
 
     getDefaultDataForPropType: function(propTypeValueString){
       //Parse out enum type (allowable set of values and a default selected value)
@@ -175,7 +179,6 @@ module.exports = function(React){
     },
 
     handleInputChange: function(field, data){
-      console.log(field, data);
 
       var controlState = this.state.controlState.filter(function(e){
         return e.name === field;
@@ -192,14 +195,11 @@ module.exports = function(React){
       );
     },
 
-
-
     getComponentModelByName: function(name){
       return __AUTOCAT_COMPONENTS__.filter(function(c){
         return c.name === name;
       }.bind(this))[0];
     },
-
 
     tryMountChild: function () {
       var mountNode = this.refs.mount.getDOMNode();
@@ -228,8 +228,10 @@ module.exports = function(React){
       }
     },
 
-
     render: function () {
+
+      var currentComponent = this.getComponentModelByName(this.state.selectedComponent);
+
       return (
         <div>
           <aside className="ac-sidebar">
@@ -261,7 +263,17 @@ module.exports = function(React){
           </aside>
           <section className="ac-section">
             { this.state.selectedComponent ?
-              <div ref="mount" />
+
+              <div className="component-harness">
+                <div className="component-harness__metadata">
+                  <h5> <strong>{currentComponent.fileName + " - "} </strong>   {  currentComponent.fullPath} </h5>
+                </div>
+                {/* 'mount' is where tryMountChild() attempts to mount a component or handle the
+                   exception that gets thrown if it fails to mount... This needs to stay in this render
+                   method and can't be extracted out */}
+                <div ref="mount" />
+              </div>
+
               :
               <SplashPage />}
           </section>
@@ -270,8 +282,5 @@ module.exports = function(React){
     }
   });
 
-
-
   return AutoCat;
-
 }
