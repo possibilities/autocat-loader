@@ -100,8 +100,9 @@ module.exports = function(React){
     }
   });
 
-
+  /*
   var PropsPanel = React.createClass({
+
 
     getInitialState: function(){
       return {
@@ -132,12 +133,15 @@ module.exports = function(React){
       })[propTypeValueString];
     },
 
+
+
     getPropsObject: function(){
       return this.state.controlState.reduce(function(memo, e) {
         memo[e.name] = e.type === "enum" ?  e.data.selectedValue : e.data;
         return memo;
       }, {});
     },
+
 
 
     handleInputChange: function(field, data){
@@ -170,33 +174,92 @@ module.exports = function(React){
       );
     }
   });
-
+     */
 
   return React.createClass({
+
     getInitialState: function(){
-      return {selectedComponent: null};
+      return {
+        controlState: [],
+        selectedComponent: null
+      };
+    },
+
+
+    getDefaultDataForPropType: function(propTypeValueString){
+      //Parse out enum type (allowable set of values and a default selected value)
+      if(/oneOf/.test(propTypeValueString)){
+        var enumValues = JSON.parse(/\[.*?\]/.exec(propTypeValueString)[0].replace(/'/g, "\""));
+        return {values: enumValues, selectedValue: enumValues[0]};
+      }
+
+      return ({
+        number: 0,
+        array: ["Item 1", "Item 2", "Item 3"],
+        string: "",
+        object:{},
+        bool: true,
+        func: function(e){console.log(e)}
+      })[propTypeValueString];
+    },
+
+    getPropsObject: function(){
+      return this.state.controlState.reduce(function(memo, e) {
+        memo[e.name] = e.type === "enum" ?  e.data.selectedValue : e.data;
+        return memo;
+      }, {});
+    },
+
+
+    getInitialPropPanelControlState: function(componentName){
+
+      var e =  __AUTOCAT_COMPONENTS__.filter(function(c){
+        return c.name === componentName;
+      }.bind(this))[0];
+
+      return e.props.map(function(e){
+          return {
+            name: e.name,
+            type: /oneOf/.test(e.type) ? "enum" : e.type,
+            isRequired: e.isRequired,
+            data: this.getDefaultDataForPropType(e.type)
+          }
+        }.bind(this));
     },
 
     handleComponentNavigate: function(name){
-      this.setState({selectedComponent: name});
+      this.setState({
+        controlState: this.getInitialPropPanelControlState(name),
+        selectedComponent: name,
+      }, function(){ this.tryMountChild()});
     },
 
-    /*
-    getCurrentComponent: function(){
-      var SelectedACItem =  __AUTOCAT_COMPONENTS__.filter(function(c){
-        return c.name === this.state.selectedComponent;
-      }.bind(this))[0];
+    handleBack: function(){
+      this.setState({
+        controlState: [],
+        selectedComponent: null
+      });
+    },
 
-      var Component = SelectedACItem.component;
+    handleInputChange: function(field, data){
+      console.log(field, data);
 
-      return (
-        <DevCard componentName={SelectedACItem.name} fileName={SelectedACItem.fileName} initState={SelectedACItem.props}>
-          <Component />
-        </DevCard>
+      var controlState = this.state.controlState.filter(function(e){
+        return e.name === field;
+      })[0];
+
+      if (controlState.type === "enum"){
+        controlState.data.selectedValue = data;
+      }
+      else{
+        controlState.data = data;
+      }
+      this.setState({controlState: this.state.controlState},
+        function(){ this.tryMountChild()}
       );
-
     },
-    */
+
+
 
     getComponentModelByName: function(name){
       return __AUTOCAT_COMPONENTS__.filter(function(c){
@@ -204,9 +267,34 @@ module.exports = function(React){
       }.bind(this))[0];
     },
 
-    handleBack: function(){
-      this.setState({selectedComponent: null});
+
+    tryMountChild: function () {
+      var mountNode = this.refs.mount.getDOMNode();
+      var CurrentComponentModel = this.getComponentModelByName(this.state.selectedComponent);
+      var curProps = this.getPropsObject();
+
+      var ChildComponent = React.addons.cloneWithProps(<CurrentComponentModel.component />, curProps);
+
+      try {
+        React.render(
+          ChildComponent,
+          mountNode
+        );
+      }
+
+      catch (err) {
+        React.render(
+          <div className="ui-alert-box whoops">
+            <span className="icon-exclamation-1"></span>
+            <strong>{err.toString()}</strong>
+           {err.stack}
+
+          </div>,
+          mountNode
+        );
+      }
     },
+
 
     render: function () {
 
@@ -223,7 +311,13 @@ module.exports = function(React){
               </header>
 
               {this.state.selectedComponent ?
-                <PropsPanel propsArray={currComponentModel.props} />
+                <div>
+                  {this.state.controlState.map(function(e){
+                    return(
+                      <TypedInput onInputChange={this.handleInputChange} controlStateDescriptor={e} />
+                    )
+                  }.bind(this))}
+                </div>
                   :
                 __AUTOCAT_COMPONENTS__.map(function (C) {
                 return (
@@ -237,20 +331,7 @@ module.exports = function(React){
             </nav>
           </aside>
           <section className="ac-section">
-            {/*this.getCurrentComponent()*/}
-
-          {__AUTOCAT_COMPONENTS__.map(function(C){
-            if(C.name === this.state.selectedComponent) {
-              return (
-                <DevCard componentName={C.name} fileName={C.fileName} initState={C.props}>
-                  <C.component />
-                </DevCard>
-              );
-            }
-            else{
-              return null;
-            }
-          }.bind(this))}
+            <div ref="mount" />
           </section>
         </div>
       )
