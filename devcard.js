@@ -38,6 +38,8 @@ module.exports = function(React){
       var component = React.Children.only(this.props.children);
       var name = this.props.componentName;
       var fileName = this.props.fileName;
+
+
       var propString = Object.keys(this.state).length > 0 ? Object.keys(this.state).map(function(key, index) {
         return key + "={" + this.state[key].data + "}";
       }.bind(this)).join(" ") : "";
@@ -139,6 +141,7 @@ module.exports = function(React){
             val = JSON.parse(val);
             newData[field] = {data: val, type: type};
             this.setState(newData);
+            this.tryMountChild();
 
           }
           catch (e) {
