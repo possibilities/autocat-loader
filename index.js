@@ -5,9 +5,6 @@ var fs = require('fs');
 var path = require('path');
 
 
-
-
-
 //Regex to figure out if anything "Reacty" is in the module
 //TODO:  Use less stupid way of determining this
 var REACT_CLASS_RE = /\React/;
@@ -107,21 +104,25 @@ module.exports = function(content, map) {
     //The entry module(s) we're going to hijack with AutoCat
     if( _.any(entryPaths, function(e){ return curPath.indexOf(e.replace(".", "")) !== -1 })){
 
-       var componentPath = this.context; //'/Users/opengov/WebstormProjects/react-material/components';
+      //This is the dir that gets traversed when building out the catalog
+      //TODO:  Allow a path relative to the webpack config file to be passed in a loader config parameter
+      //To override this behavior of traversing the directory that the entry module is located in
+       var componentPath = this.context;
 
-      var nodePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/';
-      var modulePath = nodePath + 'autocat-loader';  //'/Users/opengov/WebstormProjects/react-material/node_modules/autocat-loader';
+     // var nodePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/';
+     // var modulePath = nodePath + 'autocat-loader';
+
 
 
       var injectedSource = [
-       "require('"+ modulePath + '/autocat.css'+ "');",
+       "require('"+ require.resolve('./autocat.css') + "');",
         "var React = require('react');",
         "var ctx = require.context('" + componentPath + "', true, /\.js$/);",
         "ctx.keys().forEach(function(key){",
           "console.log(key);",
           "ctx(key);",
         "});",
-        "var AutoCatApp = require('"+ modulePath + '/autocat_index.js' +"')(React);",
+        "var AutoCatApp = require('"+ require.resolve('./autocat_index.js') +"')(React);",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
 
