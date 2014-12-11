@@ -4,6 +4,17 @@
 module.exports = function(React){
 
 
+  var SplashPage = React.createClass({
+    render: function () {
+      return (
+        <div className="ui-null">
+          <h1> AutoCat </h1>
+        </div>
+      );
+    }
+  });
+
+
 
   var TypedInput = React.createClass({
     getInitialState: function(){
@@ -14,7 +25,6 @@ module.exports = function(React){
       var val = e.target.value;
       var type = this.props.controlStateDescriptor.type;
       var field = this.props.controlStateDescriptor.name;
-    //  var newData = {};
 
       if (type === "array" || type === "object") {
         try {
@@ -81,7 +91,7 @@ module.exports = function(React){
           return  <input type="date" onChange={this.inputChangeHandler} value={data} />
           break;
         case "number":
-          return  <input type="number" onChange={this.inputChangeHandler} value={data} />
+          return  <input type="range" onChange={this.inputChangeHandler} value={data} />
           break;
         case "bool":
           return  <input type="checkbox" onChange={this.checkboxChangeHandler} value={data} />
@@ -119,7 +129,7 @@ module.exports = function(React){
       return ({
         number: 0,
         array: ["Item 1", "Item 2", "Item 3"],
-        string: "",
+        string: "Lorem Ipsum",
         object:{},
         bool: true,
         func: function(e){console.log(e)}
@@ -196,22 +206,22 @@ module.exports = function(React){
       var CurrentComponentModel = this.getComponentModelByName(this.state.selectedComponent);
       var curProps = this.getPropsObject();
 
-      var ChildComponent = React.addons.cloneWithProps(<CurrentComponentModel.component />, curProps);
-
       try {
         React.render(
-          ChildComponent,
+          <CurrentComponentModel.component {... curProps} />,
           mountNode
         );
       }
-
       catch (err) {
         React.render(
+          <div>
           <div className="ui-alert-box whoops">
             <span className="icon-exclamation-1"></span>
             <strong>{err.toString()}</strong>
-           {err.stack}
-
+            {err.stack}
+          </div>
+            <p>Please refer to the component at the path in the exception above and ensure it has all neccessary propTypes defined</p>
+            <p>This tool relies on accurate propTypes to be able to provide data needed to render a component.</p>
           </div>,
           mountNode
         );
@@ -226,7 +236,7 @@ module.exports = function(React){
             <nav className="ui-nav-list">
               <header className="ui-panel__header">
                 <div onClick={this.handleBack} className="ui-panel__back"></div>
-                <h3>{this.state.selectedComponent}</h3>
+                <h3>{this.state.selectedComponent || "All Components"}</h3>
               </header>
 
               {this.state.selectedComponent ?
@@ -250,7 +260,10 @@ module.exports = function(React){
             </nav>
           </aside>
           <section className="ac-section">
-          { this.state.selectedComponent ? <div ref="mount" /> : null}
+            { this.state.selectedComponent ?
+              <div ref="mount" />
+              :
+              <SplashPage />}
           </section>
         </div>
       )
