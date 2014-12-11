@@ -100,9 +100,9 @@ module.exports = function(content, map) {
                     _(this.options.entry).map(function(val, key){ return getEntryArray(val); }).flatten().value();
 
 
-  var ignoredModules = ["app.js", "_tabcontainer.js", "mapping_step.js", "devcard.js", "autocat_index.js", "uploader_overlay.js", "global_sidenav.js"];
+  var ignoredModules = [ "devcard.js", "autocat_index.js"];
 
-
+//"app.js", "_tabcontainer.js", "uploader_overlay.js",,  "global_sidenav.js"
 
   if (!/node_modules/.test(this.context) && !_.contains(ignoredModules, filename)){
 
@@ -116,12 +116,14 @@ module.exports = function(content, map) {
 
       //This can become a normal require.resolve() when not npm-linked to bring in autocat index and other stuff injected
       //by this loader
-      var modulePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/autocat-loader';  //'/Users/opengov/WebstormProjects/react-material/node_modules/autocat-loader';
+
+      var nodePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/';
+      var modulePath = nodePath + 'autocat-loader';  //'/Users/opengov/WebstormProjects/react-material/node_modules/autocat-loader';
 
 
       var injectedSource = [
        "require('"+ modulePath + '/autocat.css'+ "');",
-        "var React = require('react/addons');",
+        "var React = require('react');",
         "var ctx = require.context('" + componentPath + "', true, /\.js$/);",
         "ctx.keys().forEach(function(key){",
           "console.log(key);",

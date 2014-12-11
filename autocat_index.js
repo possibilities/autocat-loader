@@ -3,7 +3,6 @@
 
 module.exports = function(React){
 
-  var DevCard = require('./devcard')(React);
 
 
   var TypedInput = React.createClass({
@@ -100,83 +99,7 @@ module.exports = function(React){
     }
   });
 
-  /*
-  var PropsPanel = React.createClass({
-
-
-    getInitialState: function(){
-      return {
-        controlState: this.props.propsArray.map(function(e){
-        return {
-          name: e.name,
-          type: /oneOf/.test(e.type) ? "enum" : e.type,
-          isRequired: e.isRequired,
-          data: this.getDefaultDataForPropType(e.type)
-        }
-      }.bind(this))}
-    },
-
-    getDefaultDataForPropType: function(propTypeValueString){
-      //Parse out enum type (allowable set of values and a default selected value)
-      if(/oneOf/.test(propTypeValueString)){
-        var enumValues = JSON.parse(/\[.*?\]/.exec(propTypeValueString)[0].replace(/'/g, "\""));
-        return {values: enumValues, selectedValue: enumValues[0]};
-      }
-
-      return ({
-        number: 0,
-        array: ["Item 1", "Item 2", "Item 3"],
-        string: "",
-        object:{},
-        bool: true,
-        func: function(e){console.log(e)}
-      })[propTypeValueString];
-    },
-
-
-
-    getPropsObject: function(){
-      return this.state.controlState.reduce(function(memo, e) {
-        memo[e.name] = e.type === "enum" ?  e.data.selectedValue : e.data;
-        return memo;
-      }, {});
-    },
-
-
-
-    handleInputChange: function(field, data){
-      console.log(field, data);
-
-      var controlState = this.state.controlState.filter(function(e){
-        return e.name === field;
-      })[0];
-
-      if (controlState.type === "enum"){
-        controlState.data.selectedValue = data;
-      }
-      else{
-        controlState.data = data;
-      }
-      this.setState({controlState: this.state.controlState});
-    },
-
-    render: function () {
-      return (
-        <div>
-        {JSON.stringify(this.getPropsObject())}
-
-        {this.state.controlState.map(function(e){
-          return(
-            <TypedInput onInputChange={this.handleInputChange} controlStateDescriptor={e} />
-          )
-        }.bind(this))}
-        </div>
-      );
-    }
-  });
-     */
-
-  return React.createClass({
+  var AutoCat = React.createClass({
 
     getInitialState: function(){
       return {
@@ -297,14 +220,10 @@ module.exports = function(React){
 
 
     render: function () {
-
-      var currComponentModel = this.getComponentModelByName(this.state.selectedComponent);
-
       return (
         <div>
           <aside className="ac-sidebar">
             <nav className="ui-nav-list">
-
               <header className="ui-panel__header">
                 <div onClick={this.handleBack} className="ui-panel__back"></div>
                 <h3>{this.state.selectedComponent}</h3>
@@ -331,11 +250,15 @@ module.exports = function(React){
             </nav>
           </aside>
           <section className="ac-section">
-            <div ref="mount" />
+          { this.state.selectedComponent ? <div ref="mount" /> : null}
           </section>
         </div>
       )
     }
   });
+
+
+
+  return AutoCat;
 
 }
