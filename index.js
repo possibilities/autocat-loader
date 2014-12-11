@@ -109,8 +109,8 @@ module.exports = function(content, map) {
       //To override this behavior of traversing the directory that the entry module is located in
        var componentPath = this.context;
 
-     // var nodePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/';
-     // var modulePath = nodePath + 'autocat-loader';
+      var nodePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/';
+      var modulePath = nodePath + 'autocat-loader';
 
 
 

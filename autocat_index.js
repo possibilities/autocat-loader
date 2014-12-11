@@ -15,6 +15,28 @@ module.exports = function(React){
   });
 
 
+
+  var CodePreview = React.createClass({
+
+    generatePropsString: function(componentProps){
+      return Object.keys(componentProps)
+        .map(function(key){
+          return key + "={" + JSON.stringify(componentProps[key]) + "}";
+        }).join(' ');
+    },
+
+    render: function () {
+      return (
+      <div style={{margin: "30px auto", width: "500px"}}>
+        <code>
+         {"<" + this.props.name + " " + this.generatePropsString(this.props.componentProps) + " />" }
+        </code>
+      </div>
+      );
+    }
+  });
+
+
   /**
    * Renders an appropriate form input and binds a change handler given a data type
    */
@@ -231,6 +253,7 @@ module.exports = function(React){
     render: function () {
 
       var currentComponent = this.getComponentModelByName(this.state.selectedComponent);
+      var currentComponentProps = this.getPropsObject();
 
       return (
         <div>
@@ -272,8 +295,8 @@ module.exports = function(React){
                    exception that gets thrown if it fails to mount... This needs to stay in this render
                    method and can't be extracted out */}
                 <div ref="mount" />
+                <CodePreview name={currentComponent.name} componentProps={currentComponentProps} />
               </div>
-
               :
               <SplashPage />}
           </section>
