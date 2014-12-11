@@ -7,6 +7,9 @@ module.exports = function(React){
 
 
   var TypedInput = React.createClass({
+    getInitialState: function(){
+      return {valueBuffer: "", errors: []};
+    },
 
     inputChangeHandler: function(e){
       var val = e.target.value;
@@ -22,7 +25,9 @@ module.exports = function(React){
         catch (e) {
           var errColl = this.state.errors ? this.state.errors : [];
           errColl.push(e.message);
-          console.log(errColl);
+
+          this.setState({errors: errColl});
+
         }
       }
       else {
@@ -53,6 +58,8 @@ module.exports = function(React){
         <fieldset className="ui-form">
           <label>{this.props.controlStateDescriptor.name + " (" + type + ")"}</label>
           {this.getControlByDataType(type)}
+
+        {this.state.errors.length > 0 ? JSON.stringify(this.state.errors) : null}
         </fieldset>
       );
     },
@@ -94,26 +101,6 @@ module.exports = function(React){
   });
 
 
-
-  function getDefaultDataForPropType(propTypeValueString){
-
-    //Parse out enum type (allowable set of values and a default selected value)
-    if(/oneOf/.test(propTypeValueString)){
-      var enumValues = JSON.parse(/\[.*?\]/.exec(propTypeValueString)[0].replace(/'/g, "\""));
-      return {values: enumValues, selectedValue: enumValues[0]};
-    }
-
-    return ({
-      number: 0,
-      array: ["Item 1", "Item 2", "Item 3"],
-      string: "",
-      object:{},
-      bool: true,
-      func: function(e){console.log(e)}
-    })[propTypeValueString];
-  }
-
-
   var PropsPanel = React.createClass({
 
     getInitialState: function(){
@@ -123,20 +110,35 @@ module.exports = function(React){
           name: e.name,
           type: /oneOf/.test(e.type) ? "enum" : e.type,
           isRequired: e.isRequired,
-          data: getDefaultDataForPropType(e.type)
+          data: this.getDefaultDataForPropType(e.type)
         }
-      })}
-
-      /*
-      return this.props.propsArray.reduce(function(memo, e) {
-        memo[e.name] = {
-          type: e.type,
-          isRequired: e.isRequired,
-          data: getDefaultDataForPropType(e.type)
-        }; return memo;
-      }, {});
-    */
+      }.bind(this))}
     },
+
+    getDefaultDataForPropType: function(propTypeValueString){
+      //Parse out enum type (allowable set of values and a default selected value)
+      if(/oneOf/.test(propTypeValueString)){
+        var enumValues = JSON.parse(/\[.*?\]/.exec(propTypeValueString)[0].replace(/'/g, "\""));
+        return {values: enumValues, selectedValue: enumValues[0]};
+      }
+
+      return ({
+        number: 0,
+        array: ["Item 1", "Item 2", "Item 3"],
+        string: "",
+        object:{},
+        bool: true,
+        func: function(e){console.log(e)}
+      })[propTypeValueString];
+    },
+
+    getPropsObject: function(){
+      return this.state.controlState.reduce(function(memo, e) {
+        memo[e.name] = e.type === "enum" ?  e.data.selectedValue : e.data;
+        return memo;
+      }, {});
+    },
+
 
     handleInputChange: function(field, data){
       console.log(field, data);
@@ -151,16 +153,13 @@ module.exports = function(React){
       else{
         controlState.data = data;
       }
-
       this.setState({controlState: this.state.controlState});
-
-
     },
 
     render: function () {
       return (
         <div>
-        {JSON.stringify(this.state)}
+        {JSON.stringify(this.getPropsObject())}
 
         {this.state.controlState.map(function(e){
           return(
