@@ -7,7 +7,7 @@ var path = require('path');
 
 //Regex to figure out if anything "Reacty" is in the module
 //TODO:  Use less stupid way of determining this
-var REACT_CLASS_RE = /\React/;
+var REACT_CLASS_RE = /\React.createClass/;
 
 
 function getComponentName(object) {
@@ -117,7 +117,7 @@ module.exports = function(content, map) {
       var injectedSource = [
        "require('"+ require.resolve('./autocat.css') + "');",
         "var React = require('react');",
-        "var ctx = require.context('" + componentPath + "', true, /\.js$/);",
+        "var ctx = require.context('" + componentPath + "', true, /^(?!.*__tests__).*(\.js)/);",
         "ctx.keys().forEach(function(key){",
           "console.log(key);",
           "ctx(key);",
