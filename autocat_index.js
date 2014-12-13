@@ -42,26 +42,35 @@ module.exports = function(React){
    */
   var TypedInput = React.createClass({
     getInitialState: function(){
-      return {valueBuffer: "", errors: []};
+      return {valueBuffer: JSON.stringify(this.props.controlStateDescriptor.data), errors: []};
     },
+
+
+    handleParse: function(){
+      var field = this.props.controlStateDescriptor.name;
+
+      try {
+        var val = JSON.parse(this.state.valueBuffer);
+        this.setState({errors: []});
+        this.props.onInputChange(field, val);
+      }
+      catch (e) {
+        var errColl = this.state.errors ? this.state.errors : [];
+        errColl.push(e.message);
+
+        this.setState({errors: errColl});
+      }
+    },
+
 
     inputChangeHandler: function(e){
       var val = e.target.value;
       var type = this.props.controlStateDescriptor.type;
       var field = this.props.controlStateDescriptor.name;
 
-      //TODO:  Add richer controls for object and array editing
+      //Buffer array and object strings for explicitly parsing in the handleParse handler
       if (type === "array" || type === "object") {
-        try {
-          val = JSON.parse(val);
-          this.props.onInputChange(field, val);
-        }
-        catch (e) {
-          var errColl = this.state.errors ? this.state.errors : [];
-          errColl.push(e.message);
-
-          this.setState({errors: errColl});
-        }
+        this.setState({valueBuffer: val});
       }
       else {
         this.props.onInputChange(field, val);
@@ -103,10 +112,16 @@ module.exports = function(React){
 
       switch (type) {
         case "array":
-          return  <input type="text" onChange={this.inputChangeHandler} value={data} />
+          return  [
+            <input type="text" onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
+            <button className="ui-button" onClick={this.handleParse} >Parse</button>
+          ]
           break;
         case "object":
-          return  <input type="text" onChange={this.inputChangeHandler} value={data} />
+          return  [
+            <input type="text" onChange={this.inputChangeHandler} value={data} />,
+            <button className="ui-button" onClick={this.handleParse} >Parse</button>
+          ]
           break;
         case "string":
           return  <input type="text" onChange={this.inputChangeHandler} value={data} />
