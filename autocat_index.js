@@ -113,7 +113,7 @@ module.exports = function(React){
       switch (type) {
         case "array":
           return  [
-            <input type="text" onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
+            <textarea onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
             <button className="ui-button" onClick={this.handleParse} >Parse</button>
           ]
           break;
@@ -280,7 +280,7 @@ module.exports = function(React){
               </header>
 
               {this.state.selectedComponent ?
-                <div>
+                <div className="props-panel">
                   {this.state.controlState.map(function(e){
                     return(
                       <TypedInput onInputChange={this.handleInputChange} controlStateDescriptor={e} />

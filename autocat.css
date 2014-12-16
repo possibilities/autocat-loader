@@ -1,20 +1,18 @@
-
-
 * { box-sizing: border-box; }
 
 aside.ac-sidebar {
-    width: 20%;
+    border-right: 1px solid #ccc;
+    height: 100%;
     position:fixed;
     left:0;
     top:0;
+    width: 30%;
     z-index: 1000;
 }
 
 section.ac-section {
-    padding-left: 20%;
+    padding-left: 30%;
 }
-
-
 
 .component-harness__metadata{
     background-color: #f7f7f7;
@@ -25,3 +23,6 @@ section.ac-section {
     margin-bottom: 20px;
 }
 
+.props-panel{
+    padding: 14px;
+}
