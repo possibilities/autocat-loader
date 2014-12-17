@@ -5,6 +5,12 @@ var fs = require('fs');
 var path = require('path');
 
 
+var esprima = require('esprima');
+var estraverse = require('estraverse');
+var escodegen = require('escodegen');
+
+
+
 //Regex to figure out if anything "Reacty" is in the module
 //TODO:  Use less stupid way of determining this
 var REACT_CLASS_RE = /\React.createClass/;
@@ -38,131 +44,6 @@ module.exports = MyOtherComponent;
 
 
 
-
-/*CONSOLE DUMP  * /
-
- */
-/*
-
-
- falafel(source, function (node) {
-
-
-
- if(node.type === 'VariableDeclarator'  &&
- node.init.type === 'CallExpression' &&
- node.init.callee.type === 'MemberExpression' &&
- node.init.callee.property.name === 'createClass' ){
-
-
- //Node for traversing React.createClass() component definition
- // var innerNode = node.init.arguments[0];
-
-
-
-
- var pp = falafel({ast: node}, function(innerNode){
-
- if (innerNode.type === 'CallExpression' &&
- innerNode.callee.type === 'MemberExpression' &&
- innerNode.callee.property.name === 'arrayOf') {
- innerNode.update("[" + innerNode.arguments[0].source() + "]");
- }
-
- if (innerNode.type === 'CallExpression' &&
- innerNode.callee.type === 'MemberExpression' &&
- innerNode.callee.property.name === 'oneOf') {
- innerNode.update("{type: 'enum', enumValues: " + innerNode.arguments[0].source() + "}");
- }
-
- if (innerNode.type === 'CallExpression' &&
- innerNode.callee.property.name === 'shape') {
- innerNode.update(innerNode.arguments[0].source());
- }
-
-
- if (innerNode.type === 'MemberExpression' &&
- innerNode.object.type === 'MemberExpression' &&
- (innerNode.property.name === 'string' ||
- innerNode.property.name === 'number' ||
- innerNode.property.name === 'bool' ||
- innerNode.property.name === 'object' ||
- innerNode.property.name === 'func')) {
-
- innerNode.update("{type: '" + innerNode.property.name + "'}");
-
- }
- })
-
- // console.log("{componentName:'" + node.id.name + "'," + "propsSchema: " + pp );
-
-
-
- }
-
- })
-
-
- */
-
-
-
-
-
-
-
-//Transform arrayOf
-
-/*
-falafel(source, function (node) {
-  if (node.type === 'CallExpression' && node.callee.property.name === 'arrayOf') {
-    //console.log(node.source());
-    node.update("[" + node.arguments[0].source() + "]");
-  }
-});
-
-
-//Transform oneOf
-
-falafel(source, function (node) {
-  if (node.type === 'CallExpression' && node.callee.property.name === 'oneOf') {
-    node.update("{type: 'enum', enumValues: " + node.arguments[0].source() + "}");
-  }
-})
-
-
-
-//Transform shape
-
-falafel(source, function (node) {
-  if (node.type === 'CallExpression' && node.callee.property.name === 'shape') {
-    //console.log(node.source());
-    node.update(node.arguments[0].source());
-  }
-});
-
-
-//Transform primitive types
-
-falafel(source, function (node) {
-
-  if (node.type === 'MemberExpression' &&
-      node.object.type === 'MemberExpression' &&
-        (node.property.name === 'string' ||
-         node.property.name === 'number' ||
-         node.property.name === 'bool' ||
-         node.property.name === 'object' ||
-         node.property.name === 'func'
-        )) {
-
-      node.update("{type: '" + node.property.name + "'}");
-
-  }
-})
-*/
-
-
-
 function getExportedComponentName(source) {
 
   var name = "";
@@ -187,11 +68,19 @@ function getExportedComponentName(source) {
 
 
 
+//Matches: module.exports = SomeIdentifier
+function isExportIdentifier(node) {
+
+  return (node.type === 'AssignmentExpression' &&
+  node.left.type === 'MemberExpression' &&
+  node.left.property.name === 'exports'&&
+  node.right.type === 'Identifier')
+}
+
 
 
 //Matches: var SomeModule = require('./some_module')
 function isRequireDeclaration(node) {
-
 
   return (node.type === 'VariableDeclarator' &&
   node.init &&
@@ -203,11 +92,14 @@ function isRequireDeclaration(node) {
 
 //Matches: var SomeComponent = React.createClass({})
 function isComponentDeclaration(node) {
-  return (node.type === 'VariableDeclarator' &&
-  node.init &&
-  node.init.type === 'CallExpression' &&
-  node.init.callee.type === 'MemberExpression' &&
-  node.init.callee.property.name === 'createClass');
+  return (
+  node.type === 'VariableDeclaration' &&
+  node.declarations[0] &&
+  node.declarations[0].type === 'VariableDeclarator' &&
+  node.declarations[0].init &&
+  node.declarations[0].init.type === 'CallExpression' &&
+  node.declarations[0].init.callee.type === 'MemberExpression' &&
+  node.declarations[0].init.callee.property.name === 'createClass');
 }
 
 
@@ -231,6 +123,31 @@ function isPropTypePrimitiveType(node){
 
 }
 
+//Matches on React.createElement(SomeCustomELement, ......) calls where the passed in element is an identifier (as opposed to "div" "ul" etc)
+function isCreateCustomElementCall(node){
+
+  return (node.type === 'CallExpression' &&
+  node.callee.type === 'MemberExpression' &&
+  node.callee.property.name === 'createElement' &&
+  node.arguments[0].type === 'Identifier')
+
+}
+
+
+
+function isPropTypesProperty(node){
+  return (node.type === 'Property' &&
+  node.key.name === 'propTypes')
+}
+
+
+function isRenderMethodProperty(node){
+  return (node.type === 'Property' &&
+  node.key.name === 'render')
+}
+
+
+
 
 
 
@@ -240,6 +157,8 @@ function isPropTypePrimitiveType(node){
  * @returns {*}
  */
 
+
+/*
 function tranformFile(source){
 
 
@@ -267,15 +186,8 @@ function tranformFile(source){
           }
         }).ast;
 
-
-
-
-
       var componentPropTypesNode = _.find(subtreeAST.body[0].expression.right.arguments[0].properties, function(n) {return n.key.name === 'propTypes'; } );
-
       console.log("WILL IT PARSE? ",  "{'propsSchema': " + (componentPropTypesNode ? componentPropTypesNode.value.source() : "null") + "}"   );
-
-
       parsedComponentSchemaArray.push({componentName: node.id.name, propsSchema: JSON.parse((componentPropTypesNode ? componentPropTypesNode.value.source() : "null")) });
 
 
@@ -283,11 +195,184 @@ function tranformFile(source){
     }
   });
 
-
   return parsedComponentSchemaArray;
 
- // return parsedPropsArray;
 }
+*/
+
+
+
+
+function tranformFile(source){
+
+  //[{componentName: 'MyComponent', childComponents: [], ...]
+  var componentModels = [];
+
+  var requireIdentifiers = [];
+  var exportedIdentifier;
+
+
+  var currentComponentModel;
+
+
+ var ast = esprima.parse(source);
+
+
+  estraverse.traverse(ast, {
+    enter: function (node, parent){
+
+      //Going to traverse the component declaration subtree --
+      //create a new object to store the owned child components that will get traversed
+      if(isComponentDeclaration(node)){
+
+        currentComponentModel = {
+          name: node.declarations[0].id.name,
+          childComponents: []
+        };
+
+        componentModels.push(currentComponentModel);
+      }
+
+      if(isCreateCustomElementCall(node)){
+
+        var cName = node.arguments[0].name;
+
+        if(!_.contains(currentComponentModel.childComponents, cName)) {
+          currentComponentModel.childComponents.push(cName);
+        }
+      }
+
+      if(isRequireDeclaration(node)){
+        requireIdentifiers.push(node.id.name);
+      };
+
+      if(isExportIdentifier(node)){
+        exportedIdentifier = node.right.name;
+      }
+    }
+  });
+
+
+  //console.log(componentModels);
+
+
+
+
+  estraverse.replace(ast, {
+    enter:function(node, parent){
+
+      if(isComponentDeclaration(node)){
+
+     //   console.log("ENTERED: ", node.declarations[0].id.name);
+
+
+       // return (node.declarations[0].init.arguments[0]);
+      }
+
+
+      if (isPropTypeFunction(node, 'arrayOf')) {
+        return {
+          "type": "ArrayExpression",
+          "elements": [ node.arguments[0]]
+        }
+      }
+
+      if( isPropTypeFunction(node, 'oneOf')) {
+
+        return {
+          "type": "ObjectExpression",
+          "properties": [
+            {
+              "type": "Property",
+              "key": {
+                "type": "Identifier",
+                "name": "type",
+              },
+              "value": {
+                "type": "Literal",
+                "value": "enum"
+              },
+              "kind": "init",
+            },
+            {
+              "type": "Property",
+              "key": {
+                "type": "Identifier",
+                "name": "enumValues"
+              },
+              "value": {
+                "type": "ArrayExpression",
+                "elements": node.arguments[0]
+              },
+              "kind": "init"
+            }
+          ]
+        };
+      }
+
+      if (isPropTypeFunction(node, 'shape')) {
+        return node.arguments[0];
+      }
+
+      if (isPropTypePrimitiveType(node)) {
+        return {
+          "type": "ObjectExpression",
+          "properties": [
+            {
+              "type": "Property",
+              "key": {
+                "type": "Identifier",
+                "name": "type",
+              },
+              "value": {
+                "type": "Literal",
+                "value": node.property.name,
+              },
+              "kind": "init",
+            }
+          ]
+        };
+      }
+    },
+
+    leave: function(node, parent){
+
+
+
+      if(isPropTypesProperty(node)){
+        console.log("GET AT ME SONNNN NWFPOFISDFLK:JSDFLKJLSDJ", JSON.parse(escodegen.generate(node.value)));
+      }
+
+
+
+
+
+
+/*
+      if(!isComponentDeclaration(node) && node.type !== 'Program' ){
+        console.log("THIS IS APREDSJFLKSJDLF:JLDKJFDSKFLKJDSF:K", node);
+        // console.log("EXITING: ", node.declarations[0].id.name);
+        return this.remove();
+      }
+      */
+
+    }
+
+  });
+
+
+  //estraverse.replace(ast,{enter: function(node, parent){ if(!isComponentDeclaration(node)){return null; }  }});
+
+
+ // console.log(escodegen.generate(ast));
+
+
+
+}
+
+
+
+
 
 
 
@@ -414,7 +499,9 @@ module.exports = function(content, map) {
 
       console.log("TRANSFORMED: ", filename);
 
-      console.log(tranformFile(content));
+    //  console.log(tranformFile(content));
+
+      tranformFile(content);
 
 
 
