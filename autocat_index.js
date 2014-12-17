@@ -200,17 +200,6 @@ module.exports = function(React){
           data: this.getDefaultDataForPropType(e.props[key])
         };
       }.bind(this))
-
-      /*
-      return e.props.map(function(e){
-          return {
-            name: e.name,
-            type: /oneOf/.test(e.type) ? "enum" : e.type,
-            isRequired: e.isRequired,
-            data: this.getDefaultDataForPropType(e.type)
-          }
-        }.bind(this));
-        */
     },
 
     handleComponentNavigate: function(name){
@@ -310,6 +299,26 @@ module.exports = function(React){
                 );
               }.bind(this))}
             </nav>
+
+            <div>
+            {currentComponent && currentComponent.childComponents.length > 0 ?
+              <div>
+                <h3>Child Components </h3>
+                  {currentComponent.childComponents.map(function (name) {
+                    return (
+                      <a
+                        className={"ui-nav-list__item " + (name === this.state.selectedComponent ? "is-selected" : "") }
+                        onClick={this.handleComponentNavigate.bind(null, name)}>
+                        {name + " - " + currentComponent.fileName}
+                      </a>
+                    );
+                  }.bind(this))}
+              </div>
+              :
+              null}
+            </div>
+
+
           </aside>
           <section className="ac-section">
             { this.state.selectedComponent ?

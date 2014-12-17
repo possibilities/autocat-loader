@@ -322,6 +322,7 @@ module.exports = function(content, map) {
                 "  name: '"+ c.name + "', \n" +
                 "  component: " + c.name + ", \n" +
                 "  props: " + JSON.stringify(c.propSchema) +", \n" +
+                "  childComponents: " + JSON.stringify(c.childComponents) + ", \n" +
                 "  fileName: '"+filename+"', \n" +
                 "  fullPath: '"+resourcePath+"' \n" +
                 "});"}).join("\n");
