@@ -160,10 +160,10 @@ module.exports = function(React){
       };
     },
 
-    getDefaultDataForPropType: function(propTypeValueString){
-      //Parse out enum type (allowable set of values and a default selected value)
-      if(/oneOf/.test(propTypeValueString)){
-        var enumValues = JSON.parse(/\[.*?\]/.exec(propTypeValueString)[0].replace(/'/g, "\""));
+    getDefaultDataForPropType: function(propSchema){
+
+      if(propSchema.type === 'enum'){
+        var enumValues = propSchema.enumValues;
         return {values: enumValues, selectedValue: enumValues[0]};
       }
 
@@ -174,7 +174,7 @@ module.exports = function(React){
         object:{},
         bool: true,
         func: function(e){console.log(e)}
-      })[propTypeValueString];
+      })[propSchema.type];
     },
 
     getPropsObject: function(){
@@ -191,6 +191,17 @@ module.exports = function(React){
         return c.name === componentName;
       }.bind(this))[0];
 
+
+      return Object.keys(e.props).map(function(key){
+        return{
+          name: key,
+          type: e.props[key].type,
+          isRequired: false,
+          data: this.getDefaultDataForPropType(e.props[key])
+        };
+      }.bind(this))
+
+      /*
       return e.props.map(function(e){
           return {
             name: e.name,
@@ -199,6 +210,7 @@ module.exports = function(React){
             data: this.getDefaultDataForPropType(e.type)
           }
         }.bind(this));
+        */
     },
 
     handleComponentNavigate: function(name){

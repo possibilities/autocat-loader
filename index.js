@@ -1,70 +1,15 @@
-var falafel = require('falafel');
 var _  = require('lodash');
 var fs = require('fs');
-
 var path = require('path');
-
 
 var esprima = require('esprima');
 var estraverse = require('estraverse');
 var escodegen = require('escodegen');
 
 
-
 //Regex to figure out if anything "Reacty" is in the module
 //TODO:  Use less stupid way of determining this
 var REACT_CLASS_RE = /\React.createClass/;
-
-
-
-
-//TEST CODE
-
-/*
-var ExternalComponent = require('./external-component');
-
-
-var MyComponent = React.createClass({
-  propTypes: {
-    myProp: React.PropTypes.arrayOf([React.PropTypes.string])
-  }
-});
-
-var MyOtherComponent = React.createClass({
-  propTypes: {
-    myOtherProp: React.PropTypes.string
-  },
-  render: function () {
-    return React.createElement(ExternalComponent, {someProp: ""});
-  }
-});
-
-module.exports = MyOtherComponent;
-*/
-
-
-
-function getExportedComponentName(source) {
-
-  var name = "";
-
-  falafel(source, function (node) {
-    if (node.type === "AssignmentExpression" &&
-      node.left.type === "MemberExpression" &&
-      node.left.object.type === "Identifier" &&
-      node.left.object.name === 'module' &&
-      node.left.property.type === "Identifier" &&
-      node.left.property.name === 'exports' &&
-      node.right.type == 'Identifier') {
-
-      name = node.right.name;
-
-    }
-  });
-
-  return name;
-
-}
 
 
 
@@ -78,7 +23,6 @@ function isExportIdentifier(node) {
 }
 
 
-
 //Matches: var SomeModule = require('./some_module')
 function isRequireDeclaration(node) {
 
@@ -87,7 +31,6 @@ function isRequireDeclaration(node) {
   node.init.type === 'CallExpression' &&
   node.init.callee.name === 'require');
 }
-
 
 
 //Matches: var SomeComponent = React.createClass({})
@@ -134,7 +77,6 @@ function isCreateCustomElementCall(node){
 }
 
 
-
 function isPropTypesProperty(node){
   return (node.type === 'Property' &&
   node.key.name === 'propTypes')
@@ -149,58 +91,11 @@ function isRenderMethodProperty(node){
 
 
 
-
-
 /**
  * Transforms the source file into a representation that can be used at runtime by AutoCat
  * @param source
  * @returns {*}
  */
-
-
-/*
-function tranformFile(source){
-
-
-  var parsedComponentSchemaArray = [];
-
-  var allRequireIdentifiers =[];
-
-  falafel(source, function (node) {
-    if(isRequireDeclaration(node)){
-        allRequireIdentifiers.push(node.id.name);
-    }
-    if(isComponentDeclaration(node)){
-        var subtreeAST = falafel(node.source(), function(innerNode){
-          if (isPropTypeFunction(innerNode, 'arrayOf')) {
-            innerNode.update("[" + innerNode.arguments[0].source() + "]");
-          }
-          if (isPropTypeFunction(innerNode, 'oneOf')) {
-            innerNode.update("{type: 'enum', enumValues: " + innerNode.arguments[0].source() + "}");
-          }
-          if (isPropTypeFunction(innerNode, 'shape')) {
-            innerNode.update(innerNode.arguments[0].source());
-          }
-          if (isPropTypePrimitiveType(innerNode)) {
-            innerNode.update("{type: '" + innerNode.property.name + "'}");
-          }
-        }).ast;
-
-      var componentPropTypesNode = _.find(subtreeAST.body[0].expression.right.arguments[0].properties, function(n) {return n.key.name === 'propTypes'; } );
-      console.log("WILL IT PARSE? ",  "{'propsSchema': " + (componentPropTypesNode ? componentPropTypesNode.value.source() : "null") + "}"   );
-      parsedComponentSchemaArray.push({componentName: node.id.name, propsSchema: JSON.parse((componentPropTypesNode ? componentPropTypesNode.value.source() : "null")) });
-
-
-     // console.log("{componentName:'" + node.id.name + "'," + "propsSchema: " + (componentPropTypesNode ? componentPropTypesNode.value.source() : "null") + "}" );
-    }
-  });
-
-  return parsedComponentSchemaArray;
-
-}
-*/
-
-
 
 
 function tranformFile(source){
@@ -218,8 +113,11 @@ function tranformFile(source){
  var ast = esprima.parse(source);
 
 
-  estraverse.traverse(ast, {
-    enter: function (node, parent){
+  estraverse.replace(ast, {
+    enter:function(node, parent){
+
+      //**** AST Scan/collect functions ******
+
 
       //Going to traverse the component declaration subtree --
       //create a new object to store the owned child components that will get traversed
@@ -227,7 +125,8 @@ function tranformFile(source){
 
         currentComponentModel = {
           name: node.declarations[0].id.name,
-          childComponents: []
+          childComponents: [],
+          propSchema: {}
         };
 
         componentModels.push(currentComponentModel);
@@ -249,26 +148,9 @@ function tranformFile(source){
       if(isExportIdentifier(node)){
         exportedIdentifier = node.right.name;
       }
-    }
-  });
 
 
-  //console.log(componentModels);
-
-
-
-
-  estraverse.replace(ast, {
-    enter:function(node, parent){
-
-      if(isComponentDeclaration(node)){
-
-     //   console.log("ENTERED: ", node.declarations[0].id.name);
-
-
-       // return (node.declarations[0].init.arguments[0]);
-      }
-
+      //***** AST rewrite functions ******
 
       if (isPropTypeFunction(node, 'arrayOf')) {
         return {
@@ -300,10 +182,7 @@ function tranformFile(source){
                 "type": "Identifier",
                 "name": "enumValues"
               },
-              "value": {
-                "type": "ArrayExpression",
-                "elements": node.arguments[0]
-              },
+              "value": node.arguments[0],
               "kind": "init"
             }
           ]
@@ -328,7 +207,7 @@ function tranformFile(source){
                 "type": "Literal",
                 "value": node.property.name,
               },
-              "kind": "init",
+              "kind": "init"
             }
           ]
         };
@@ -336,74 +215,16 @@ function tranformFile(source){
     },
 
     leave: function(node, parent){
-
-
-
+      //Generate code for the transformed propType literal and tack it onto the current component model context
       if(isPropTypesProperty(node)){
-        console.log("GET AT ME SONNNN NWFPOFISDFLK:JSDFLKJLSDJ", JSON.parse(escodegen.generate(node.value)));
+        var parsedTransformedPropTypes =  eval("(" + escodegen.generate(node.value) + ")");
+        currentComponentModel.propSchema = parsedTransformedPropTypes;
       }
-
-
-
-
-
-
-/*
-      if(!isComponentDeclaration(node) && node.type !== 'Program' ){
-        console.log("THIS IS APREDSJFLKSJDLF:JLDKJFDSKFLKJDSF:K", node);
-        // console.log("EXITING: ", node.declarations[0].id.name);
-        return this.remove();
-      }
-      */
-
     }
-
   });
 
-
-  //estraverse.replace(ast,{enter: function(node, parent){ if(!isComponentDeclaration(node)){return null; }  }});
-
-
- // console.log(escodegen.generate(ast));
-
-
-
+  return componentModels;
 }
-
-
-
-
-
-
-
-//if (node.type === 'Property' && node.key.name === 'propTypes') {
-
-
-/*
-
- parsedPropsArray = _(node.parent.properties).filter(function (p) {
- return p.type == "Property" && p.key.name == "propTypes"
- }).map(function (n) {
- // console.log(self.request);
- return _.map(n.value.properties, function (e) {
- var ptString = e.value.source();
- var splitPTString = ptString.split('.');
- var isRequired = splitPTString[splitPTString.length - 1] === "isRequired";
- var type = isRequired ? splitPTString[splitPTString.length - 2] : splitPTString[splitPTString.length - 1];
- return {name: e.key.name, type: type, isRequired: isRequired };
- });
- }).flatten().value();
- }
-
- */
-
-//});
-
-
-
-var componentTemplateFunc = _.template(fs.readFileSync(require.resolve('./component.template'), 'utf8'));
-
-
 
 
 function getEntryArray(entry){
@@ -478,7 +299,6 @@ module.exports = function(content, map) {
       ].join(" ");
 
 
-
       console.log(injectedSource);
 
       return injectedSource;
@@ -492,49 +312,22 @@ module.exports = function(content, map) {
       }
 
 
-
-      //var exportsName = getExportedComponentName(source);
-
-      //var transformedProps ;
-
       console.log("TRANSFORMED: ", filename);
 
-    //  console.log(tranformFile(content));
+      var componentModelArray = tranformFile(content);
 
-      tranformFile(content);
-
-
-
-      /*
-      var transformedSource = falafel(content, function (node) {
-        if (node.type === "AssignmentExpression" &&
-            node.left.type === "MemberExpression" &&
-            node.left.object.type === "Identifier" &&
-            node.left.object.name === 'module' &&
-            node.left.property.type === "Identifier" &&
-            node.left.property.name === 'exports' &&
-            node.right.type == 'Identifier')
-            {
-
-              var parsedPropArr = parseProps(content) || [];
-              var transformedNode = componentTemplateFunc(
-                {
-                  componentName: node.right.name,
-                  propsDescriptor: JSON.stringify(parsedPropArr),
-                  fileName: filename,
-                  fullPath: resourcePath,
-                  exportNodeSource: node.source()
-                });
-
-              node.update(transformedNode);
-            }
-      });
-
-      */
+      var appendScript = componentModelArray.map(function(c){
+        return  "global.__AUTOCAT_COMPONENTS__ = global.__AUTOCAT_COMPONENTS__ || []; \n" +
+                "global.__AUTOCAT_COMPONENTS__.push({ \n" +
+                "  name: '"+ c.name + "', \n" +
+                "  component: " + c.name + ", \n" +
+                "  props: " + JSON.stringify(c.propSchema) +", \n" +
+                "  fileName: '"+filename+"', \n" +
+                "  fullPath: '"+resourcePath+"' \n" +
+                "});"}).join("\n");
 
 
-     return content;
-    //  return "" + transformedSource;
+      return content + appendScript;
     }
   }
 
