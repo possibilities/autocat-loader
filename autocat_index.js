@@ -162,6 +162,19 @@ module.exports = function(React){
 
     getDefaultDataForPropType: function(propSchema){
 
+
+      if (!propSchema.type && !Array.isArray(propSchema)){
+        return Object.keys(propSchema).map(function(key){
+          return  this.getDefaultDataForPropType(propSchema[key]);
+        }.bind(this));
+      }
+
+      if (Array.isArray(propSchema)){
+        return propSchema.map(function(ps){
+          return  this.getDefaultDataForPropType(ps)
+        }.bind(this));
+      }
+
       if(propSchema.type === 'enum'){
         var enumValues = propSchema.enumValues;
         return {values: enumValues, selectedValue: enumValues[0]};
@@ -316,6 +329,24 @@ module.exports = function(React){
               </div>
               :
               null}
+
+             {!!currentComponent ?
+               <div>
+
+                 <div>{JSON.stringify(currentComponent.props)} </div>
+
+                 <h3>Used Props </h3>
+                 <ul>
+                   {currentComponent.usedProps.map(function (prop) {
+                     return (
+                       <li>{prop}</li>
+                     );
+                   }.bind(this))}
+                 </ul>
+               </div>
+               :
+               null}
+
             </div>
 
 

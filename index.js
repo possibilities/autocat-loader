@@ -77,6 +77,18 @@ function isCreateCustomElementCall(node){
 }
 
 
+
+function isPropsMemberExpression(node){
+
+  return (node.type === 'MemberExpression' &&
+  node.object.type === 'MemberExpression' &&
+  node.object.property.name === 'props')
+
+}
+
+
+
+
 function isPropTypesProperty(node){
   return (node.type === 'Property' &&
   node.key.name === 'propTypes')
@@ -126,6 +138,7 @@ function tranformFile(source){
         currentComponentModel = {
           name: node.declarations[0].id.name,
           childComponents: [],
+          usedProps: [],
           propSchema: {}
         };
 
@@ -133,13 +146,21 @@ function tranformFile(source){
       }
 
       if(isCreateCustomElementCall(node)){
-
         var cName = node.arguments[0].name;
 
         if(!_.contains(currentComponentModel.childComponents, cName)) {
           currentComponentModel.childComponents.push(cName);
         }
       }
+
+      if(isPropsMemberExpression(node)){
+        var usedPropName = node.property.name;
+
+        if(!_.contains(currentComponentModel.usedProps, usedPropName)) {
+          currentComponentModel.usedProps.push(usedPropName);
+        }
+      }
+
 
       if(isRequireDeclaration(node)){
         requireIdentifiers.push(node.id.name);
@@ -273,7 +294,7 @@ module.exports = function(content, map) {
       var modulePath = nodePath + 'autocat-loader';
 
 
-/*
+
       var injectedSource = [
        "require('"+ require.resolve('./autocat.css') + "');",
         "var React = require('react');",
@@ -285,7 +306,8 @@ module.exports = function(content, map) {
         "var AutoCatApp = require('"+ require.resolve('./autocat_index.js') +"')(React);",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
-*/
+
+      /*
       var injectedSource = [
         "require('"+ modulePath + "/autocat.css" + "');",
         "var React = require('react');",
@@ -297,7 +319,7 @@ module.exports = function(content, map) {
         "var AutoCatApp = require('"+ modulePath + "/autocat_index.js" +"')(React);",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
-
+*/
 
       console.log(injectedSource);
 
@@ -322,6 +344,7 @@ module.exports = function(content, map) {
                 "  name: '"+ c.name + "', \n" +
                 "  component: " + c.name + ", \n" +
                 "  props: " + JSON.stringify(c.propSchema) +", \n" +
+                "  usedProps: " + JSON.stringify(c.usedProps) +", \n" +
                 "  childComponents: " + JSON.stringify(c.childComponents) + ", \n" +
                 "  fileName: '"+filename+"', \n" +
                 "  fullPath: '"+resourcePath+"' \n" +
