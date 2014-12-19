@@ -15,6 +15,7 @@
     "estraverse": "^1.9.0",
     "falafel": "git+ssh://git@github.com:gurdasnijor/node-falafel.git",
     "lodash": "^2.4.1",
+    "jsoneditor": "^3.1.2",
     "parent-require": "^1.0.0"
   },
   "peerDependencies": {

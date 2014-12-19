@@ -1,6 +1,12 @@
 "use strict"
 
 
+var JSONEditor = require('jsoneditor');
+
+
+require('jsoneditor/jsoneditor.css');
+
+
 module.exports = function(React){
 
 
@@ -42,20 +48,38 @@ module.exports = function(React){
    */
   var TypedInput = React.createClass({
     getInitialState: function(){
-      return {valueBuffer: JSON.stringify(this.props.controlStateDescriptor.data, null, 2), errors: []};
+      return {
+        valueBuffer: JSON.stringify(this.props.controlStateDescriptor.data, null, 2),
+        errors: []
+      };
     },
 
     componentDidMount: function(){
-
-      var ta = this.refs.textArea && this.refs.textArea.getDOMNode();
-
-      if(ta){
-        ta.style.height = "1px";
-        ta.style.height = (25+ta.scrollHeight)+"px";
+      if(this.refs.editorMount) {
+        this.editor = new JSONEditor(this.refs.editorMount.getDOMNode(), {
+          "mode": "tree",
+          "search": true,
+          change: this.handleJSONEditorUpdate,
+          error:this.handleJSONEditorError
+        });
+        this.editor.set(this.props.controlStateDescriptor.data);
+        this.editor.expandAll();
       }
     },
 
+    handleJSONEditorUpdate: function(){
+      console.log(this.editor.get());
+      var field = this.props.controlStateDescriptor.name;
+      this.props.onInputChange(field, this.editor.get());
+    },
 
+    handleJSONEditorError: function(err){
+      var errColl = this.state.errors ? this.state.errors : [];
+      errColl.push(err.message);
+      this.setState({errors: errColl});
+    },
+
+/*
     handleParse: function(){
       var field = this.props.controlStateDescriptor.name;
 
@@ -71,7 +95,7 @@ module.exports = function(React){
         this.setState({errors: errColl});
       }
     },
-
+*/
 
     inputChangeHandler: function(e){
       var val = e.target.value;
@@ -122,16 +146,10 @@ module.exports = function(React){
 
       switch (type) {
         case "array":
-          return  [
-            <textarea ref="textArea" onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
-            <button className="ui-button" onClick={this.handleParse} >Parse</button>
-          ]
+          return <div ref="editorMount" />;
           break;
         case "object":
-          return  [
-            <textarea ref="textArea" onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
-            <button className="ui-button" onClick={this.handleParse} >Parse</button>
-          ]
+          return <div ref="editorMount" />;
           break;
         case "string":
           return  <input type="text" onChange={this.inputChangeHandler} value={data} />
@@ -195,10 +213,10 @@ module.exports = function(React){
 
       //Scalars
       return ({
-        number: 0,
+        number: Math.random() * 1000,
         array: ["Lorem Ipsum", "Lorem Ipsum", "Lorem Ipsum"],
         string: "Lorem Ipsum",
-        object:{},
+        object:{key:"value"},
         bool: true,
         func: function(e){console.log(e)}
       })[propSchema.type];
@@ -210,7 +228,6 @@ module.exports = function(React){
         return memo;
       }, {});
     },
-
 
     getInitialPropPanelControlState: function(componentName){
 
@@ -354,9 +371,6 @@ module.exports = function(React){
 
              {!!currentComponent ?
                <div>
-
-                 <div>{JSON.stringify(this.state.controlState)} </div>
-
                  <h3>Used Props </h3>
                  <ul>
                    {currentComponent.usedProps.map(function (prop) {
