@@ -66,6 +66,24 @@ function isPropTypePrimitiveType(node){
 
 }
 
+
+//Matches nodes for React.PropTypes.{$type}.isRequired | where $type = string || number || bool etc...
+function isPropPrimitiveTypeIsRequiredNode(node){
+  return (node.type === 'MemberExpression' &&
+  node.object.type === 'MemberExpression' &&
+  node.object.object &&
+  node.object.object.type === 'MemberExpression' &&
+  (node.object.property.name === 'string' ||
+  node.object.property.name === 'number' ||
+  node.object.property.name === 'bool' ||
+  node.object.property.name === 'object' ||
+  node.object.property.name === 'func' ||
+  node.object.property.name === 'array'));
+
+}
+
+
+
 //Matches on React.createElement(SomeCustomELement, ......) calls where the passed in element is an identifier (as opposed to "div" "ul" etc)
 function isCreateCustomElementCall(node){
 
@@ -122,7 +140,7 @@ function tranformFile(source){
   var currentComponentModel;
 
 
- var ast = esprima.parse(source);
+  var ast = esprima.parse(source);
 
 
   estraverse.replace(ast, {
@@ -148,7 +166,7 @@ function tranformFile(source){
       if(isCreateCustomElementCall(node)){
         var cName = node.arguments[0].name;
 
-        if(!_.contains(currentComponentModel.childComponents, cName)) {
+        if(currentComponentModel && !_.contains(currentComponentModel.childComponents, cName)) {
           currentComponentModel.childComponents.push(cName);
         }
       }
@@ -181,7 +199,6 @@ function tranformFile(source){
       }
 
       if( isPropTypeFunction(node, 'oneOf')) {
-
         return {
           "type": "ObjectExpression",
           "properties": [
@@ -214,6 +231,43 @@ function tranformFile(source){
         return node.arguments[0];
       }
 
+
+      //Match on propType nodes with .isRequired
+      if(isPropPrimitiveTypeIsRequiredNode(node)){
+        return {
+          "type": "ObjectExpression",
+          "properties": [
+            {
+              "type": "Property",
+              "key": {
+                "type": "Identifier",
+                "name": "type",
+              },
+              "value": {
+                "type": "Literal",
+                "value": node.object.property.name,
+              },
+              "kind": "init"
+            },
+
+            {
+              "type": "Property",
+              "key": {
+                "type": "Identifier",
+                "name": "required",
+              },
+              "value": {
+                "type": "Literal",
+                "value": true,
+              },
+              "kind": "init"
+            }
+          ]
+        };
+      }
+
+
+      //Match on propType nodes without .isRequired
       if (isPropTypePrimitiveType(node)) {
         return {
           "type": "ObjectExpression",
@@ -272,8 +326,8 @@ module.exports = function(content, map) {
 
   //Parse out all potential app entry points
   var entryPaths = !_.isPlainObject(this.options.entry) ?
-                    getEntryArray(this.options.entry) :
-                    _(this.options.entry).map(function(val, key){ return getEntryArray(val); }).flatten().value();
+    getEntryArray(this.options.entry) :
+    _(this.options.entry).map(function(val, key){ return getEntryArray(val); }).flatten().value();
 
 
 
@@ -288,45 +342,47 @@ module.exports = function(content, map) {
       //This is the dir that gets traversed when building out the catalog
       //TODO:  Allow a path relative to the webpack config file to be passed in a loader config parameter
       //To override this behavior of traversing the directory that the entry module is located in
-       var componentPath = this.context;
+      var componentPath = this.context;
 
       var nodePath = '/Users/opengov/WebstormProjects/DataManager/node_modules/';
       var modulePath = nodePath + 'autocat-loader';
 
 
-
+/*
       var injectedSource = [
-       "require('"+ require.resolve('./autocat.css') + "');",
+        "require('"+ require.resolve('./autocat.css') + "');",
         "var React = require('react');",
         "var ctx = require.context('" + componentPath + "', true, /^(?!.*__tests__).*(\.js)/);",
         "ctx.keys().forEach(function(key){",
-          "console.log(key);",
-          "ctx(key);",
+        "console.log(key);",
+        "ctx(key);",
         "});",
         "var AutoCatApp = require('"+ require.resolve('./autocat_index.js') +"')(React);",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
+      */
 
-      /*
-      var injectedSource = [
-        "require('"+ modulePath + "/autocat.css" + "');",
-        "var React = require('react');",
-        "var ctx = require.context('" + componentPath + "', true, /^(?!.*__tests__).*(\.js)/);",
-        "ctx.keys().forEach(function(key){",
-          "console.log(key);",
-          "ctx(key);",
-        "});",
-        "var AutoCatApp = require('"+ modulePath + "/autocat_index.js" +"')(React);",
-        "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
-      ].join(" ");
-*/
+
+       var injectedSource = [
+       "require('"+ modulePath + "/autocat.css" + "');",
+       "var React = require('react');",
+       "var ctx = require.context('" + componentPath + "', true, /^(?!.*__tests__).*(\.js)/);",
+       "ctx.keys().forEach(function(key){",
+       "console.log(key);",
+       "ctx(key);",
+       "});",
+       "var AutoCatApp = require('"+ modulePath + "/autocat_index.js" +"')(React);",
+       "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
+       ].join(" ");
+
 
       console.log(injectedSource);
 
-      return injectedSource;
+
+      return  "try {" + content + injectedSource + "} catch(ex){ console.log(ex);}";
     }
 
-  else{
+    else{
 
       //Ignore modules without React top level api calls
       if (!content.match(REACT_CLASS_RE)) {
@@ -340,15 +396,15 @@ module.exports = function(content, map) {
 
       var appendScript = componentModelArray.map(function(c){
         return  "global.__AUTOCAT_COMPONENTS__ = global.__AUTOCAT_COMPONENTS__ || []; \n" +
-                "global.__AUTOCAT_COMPONENTS__.push({ \n" +
-                "  name: '"+ c.name + "', \n" +
-                "  component: " + c.name + ", \n" +
-                "  props: " + JSON.stringify(c.propSchema) +", \n" +
-                "  usedProps: " + JSON.stringify(c.usedProps) +", \n" +
-                "  childComponents: " + JSON.stringify(c.childComponents) + ", \n" +
-                "  fileName: '"+filename+"', \n" +
-                "  fullPath: '"+resourcePath+"' \n" +
-                "});"}).join("\n");
+          "global.__AUTOCAT_COMPONENTS__.push({ \n" +
+          "  name: '"+ c.name + "', \n" +
+          "  component: " + c.name + ", \n" +
+          "  props: " + JSON.stringify(c.propSchema) +", \n" +
+          "  usedProps: " + JSON.stringify(c.usedProps) +", \n" +
+          "  childComponents: " + JSON.stringify(c.childComponents) + ", \n" +
+          "  fileName: '"+filename+"', \n" +
+          "  fullPath: '"+resourcePath+"' \n" +
+          "});"}).join("\n");
 
 
       return content + appendScript;

@@ -1,6 +1,7 @@
 * { box-sizing: border-box; }
 
 aside.ac-sidebar {
+    overflow: scroll;
     border-right: 1px solid #ccc;
     height: 100%;
     position:fixed;

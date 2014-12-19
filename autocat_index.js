@@ -42,7 +42,20 @@ module.exports = function(React){
    */
   var TypedInput = React.createClass({
     getInitialState: function(){
-      return {valueBuffer: JSON.stringify(this.props.controlStateDescriptor.data), errors: []};
+      return {valueBuffer: JSON.stringify(this.props.controlStateDescriptor.data, null, 2), errors: []};
+    },
+
+
+
+
+    componentDidMount: function(){
+
+      var ta = this.refs.textArea && this.refs.textArea.getDOMNode();
+
+      if(ta){
+        ta.style.height = "1px";
+        ta.style.height = (25+ta.scrollHeight)+"px";
+      }
     },
 
 
@@ -113,7 +126,7 @@ module.exports = function(React){
       switch (type) {
         case "array":
           return  [
-            <textarea onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
+            <textarea ref="textArea" onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
             <button className="ui-button" onClick={this.handleParse} >Parse</button>
           ]
           break;
@@ -149,8 +162,6 @@ module.exports = function(React){
   });
 
 
-
-
   var AutoCat = React.createClass({
 
     getInitialState: function(){
@@ -162,27 +173,33 @@ module.exports = function(React){
 
     getDefaultDataForPropType: function(propSchema){
 
-
+      //Objects
       if (!propSchema.type && !Array.isArray(propSchema)){
-        return Object.keys(propSchema).map(function(key){
-          return  this.getDefaultDataForPropType(propSchema[key]);
+        var obj = {};
+        Object.keys(propSchema).map(function(key){
+          obj[key] = this.getDefaultDataForPropType(propSchema[key]);
         }.bind(this));
+        return obj;
       }
 
+      //Arrays
       if (Array.isArray(propSchema)){
-        return propSchema.map(function(ps){
-          return  this.getDefaultDataForPropType(ps)
+        //Get some multiplicity of test array data
+        return [1,2,3].map(function(i){
+          return this.getDefaultDataForPropType(propSchema[0]);
         }.bind(this));
       }
 
+      //Enums
       if(propSchema.type === 'enum'){
         var enumValues = propSchema.enumValues;
         return {values: enumValues, selectedValue: enumValues[0]};
       }
 
+      //Scalars
       return ({
         number: 0,
-        array: ["Item 1", "Item 2", "Item 3"],
+        array: ["Lorem Ipsum", "Lorem Ipsum", "Lorem Ipsum"],
         string: "Lorem Ipsum",
         object:{},
         bool: true,
@@ -200,18 +217,26 @@ module.exports = function(React){
 
     getInitialPropPanelControlState: function(componentName){
 
-      var e =  __AUTOCAT_COMPONENTS__.filter(function(c){
-        return c.name === componentName;
-      }.bind(this))[0];
-
+      var e = this.getComponentModelByName(componentName);
 
       return Object.keys(e.props).map(function(key){
-        return{
+
+        var inferredType;
+
+        if(Array.isArray(e.props[key])){
+          inferredType = "array";
+        }
+        else if (!e.props[key].type && !Array.isArray(e.props[key])){
+          inferredType = "object";
+        }
+
+        var ret = {
           name: key,
-          type: e.props[key].type,
-          isRequired: false,
+          type: inferredType ? inferredType : e.props[key].type,
+          isRequired: e.props[key].required,
           data: this.getDefaultDataForPropType(e.props[key])
         };
+        return ret;
       }.bind(this))
     },
 
@@ -333,7 +358,7 @@ module.exports = function(React){
              {!!currentComponent ?
                <div>
 
-                 <div>{JSON.stringify(currentComponent.props)} </div>
+                 <div>{JSON.stringify(this.state.controlState)} </div>
 
                  <h3>Used Props </h3>
                  <ul>
