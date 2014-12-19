@@ -45,9 +45,6 @@ module.exports = function(React){
       return {valueBuffer: JSON.stringify(this.props.controlStateDescriptor.data, null, 2), errors: []};
     },
 
-
-
-
     componentDidMount: function(){
 
       var ta = this.refs.textArea && this.refs.textArea.getDOMNode();
@@ -132,7 +129,7 @@ module.exports = function(React){
           break;
         case "object":
           return  [
-            <input type="text" onChange={this.inputChangeHandler} value={data} />,
+            <textarea ref="textArea" onChange={this.inputChangeHandler} value={this.state.valueBuffer} />,
             <button className="ui-button" onClick={this.handleParse} >Parse</button>
           ]
           break;
