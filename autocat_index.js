@@ -69,7 +69,6 @@ module.exports = function(React){
     },
 
     render: function () {
-
       return (
        <div ref="editorMount" />
       );
@@ -117,7 +116,7 @@ module.exports = function(React){
         number: Math.random() * 1000,
         array: ["Lorem Ipsum", "Lorem Ipsum", "Lorem Ipsum"],
         string: "Lorem Ipsum",
-        object:{key:"value"},
+        object: {key:"value"},
         bool: true,
         func: function(e){console.log(e)}
       })[propSchema.type];
@@ -127,27 +126,14 @@ module.exports = function(React){
       return this.state.controlStateObject;
     },
 
-
     getInitialPropPanelControlStateObject: function(componentName){
 
       var e = this.getComponentModelByName(componentName);
       var ret = {};
 
       Object.keys(e.props).map(function(key) {
-        var inferredType;
-
-        if(Array.isArray(e.props[key])){
-          inferredType = "array";
-        }
-        else if (!e.props[key].type && !Array.isArray(e.props[key])){
-          inferredType = "object";
-        }
-
         ret[key] = this.getDefaultDataForPropType(e.props[key]);
-
       }.bind(this));
-
-      console.log(ret);
 
       return ret;
     },

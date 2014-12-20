@@ -348,7 +348,7 @@ module.exports = function(content, map) {
       var modulePath = nodePath + 'autocat-loader';
 
 
-/*
+
       var injectedSource = [
         "require('"+ require.resolve('./autocat.css') + "');",
         "var React = require('react');",
@@ -360,9 +360,9 @@ module.exports = function(content, map) {
         "var AutoCatApp = require('"+ require.resolve('./autocat_index.js') +"')(React);",
         "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
       ].join(" ");
-      */
 
 
+/*
        var injectedSource = [
        "require('"+ modulePath + "/autocat.css" + "');",
        "var React = require('react');",
@@ -374,6 +374,8 @@ module.exports = function(content, map) {
        "var AutoCatApp = require('"+ modulePath + "/autocat_index.js" +"')(React);",
        "if (typeof window !== 'undefined') { React.render(React.createElement(AutoCatApp, null), document.body); }"
        ].join(" ");
+
+*/
 
 
       console.log(injectedSource);
