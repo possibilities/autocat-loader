@@ -23,7 +23,6 @@ module.exports = function(React){
 
 
   var CodePreview = React.createClass({
-
     generatePropsString: function(componentProps){
       return Object.keys(componentProps)
         .map(function(key){
@@ -43,16 +42,7 @@ module.exports = function(React){
   });
 
 
-  /**
-   * Renders an appropriate form input and binds a change handler given a data type
-   */
-  var TypedInput = React.createClass({
-    getInitialState: function(){
-      return {
-        valueBuffer: JSON.stringify(this.props.controlStateDescriptor.data, null, 2),
-        errors: []
-      };
-    },
+  var PropsPanel = React.createClass({
 
     componentDidMount: function(){
       if(this.refs.editorMount) {
@@ -62,15 +52,14 @@ module.exports = function(React){
           change: this.handleJSONEditorUpdate,
           error:this.handleJSONEditorError
         });
-        this.editor.set(this.props.controlStateDescriptor.data);
+        this.editor.set(this.props.propsObject);
         this.editor.expandAll();
       }
     },
 
     handleJSONEditorUpdate: function(){
       console.log(this.editor.get());
-      var field = this.props.controlStateDescriptor.name;
-      this.props.onInputChange(field, this.editor.get());
+      this.props.onInputChange(this.editor.get());
     },
 
     handleJSONEditorError: function(err){
@@ -79,109 +68,21 @@ module.exports = function(React){
       this.setState({errors: errColl});
     },
 
-/*
-    handleParse: function(){
-      var field = this.props.controlStateDescriptor.name;
-
-      try {
-        var val = JSON.parse(this.state.valueBuffer);
-        this.setState({errors: []});
-        this.props.onInputChange(field, val);
-      }
-      catch (e) {
-        var errColl = this.state.errors ? this.state.errors : [];
-        errColl.push(e.message);
-
-        this.setState({errors: errColl});
-      }
-    },
-*/
-
-    inputChangeHandler: function(e){
-      var val = e.target.value;
-      var type = this.props.controlStateDescriptor.type;
-      var field = this.props.controlStateDescriptor.name;
-
-      //Buffer array and object strings for explicitly parsing in the handleParse handler
-      if (type === "array" || type === "object") {
-        this.setState({valueBuffer: val});
-      }
-      else {
-        this.props.onInputChange(field, val);
-      }
-    },
-
-    checkboxChangeHandler: function(e){
-      var isChecked = e.target.checked;
-      var field = this.props.controlStateDescriptor.name;
-
-      this.props.onInputChange(field, isChecked);
-
-    },
-
-    selectChangeHandler: function(e){
-      var val = e.target.options[e.target.selectedIndex].value;
-      var field = this.props.controlStateDescriptor.name;
-
-      this.props.onInputChange(field, val);
-
-    },
-
     render: function () {
-      var type = this.props.controlStateDescriptor.type;
 
       return (
-        <fieldset className="ui-form">
-          <label>{this.props.controlStateDescriptor.name + " (" + type + ")"}</label>
-          {this.getControlByDataType(type)}
-
-        {this.state.errors.length > 0 ? JSON.stringify(this.state.errors) : null}
-        </fieldset>
+       <div ref="editorMount" />
       );
     },
-
-    getControlByDataType: function(type){
-
-      var data = this.props.controlStateDescriptor.data;
-
-      switch (type) {
-        case "array":
-          return <div ref="editorMount" />;
-          break;
-        case "object":
-          return <div ref="editorMount" />;
-          break;
-        case "string":
-          return  <input type="text" onChange={this.inputChangeHandler} value={data} />
-          break;
-        case "date":
-          return  <input type="date" onChange={this.inputChangeHandler} value={data} />
-          break;
-        case "number":
-          return  <input type="range" onChange={this.inputChangeHandler} value={data} />
-          break;
-        case "bool":
-          return  <input type="checkbox" onChange={this.checkboxChangeHandler} value={data} />
-          break;
-        case "enum":
-          return  (
-            <select onChange={this.selectChangeHandler}>
-               {data.values.map(function(e){
-                 return <option value={e}>{e}</option>
-               })}
-            </select>
-          );
-          break;
-      }
-    }
   });
+
 
 
   var AutoCat = React.createClass({
 
     getInitialState: function(){
       return {
-        controlState: [],
+        controlStateObject: {},
         selectedComponent: null
       };
     },
@@ -208,7 +109,7 @@ module.exports = function(React){
       //Enums
       if(propSchema.type === 'enum'){
         var enumValues = propSchema.enumValues;
-        return {values: enumValues, selectedValue: enumValues[0]};
+        return enumValues[0];   //{values: enumValues, selectedValue: enumValues[0]};
       }
 
       //Scalars
@@ -223,18 +124,16 @@ module.exports = function(React){
     },
 
     getPropsObject: function(){
-      return this.state.controlState.reduce(function(memo, e) {
-        memo[e.name] = e.type === "enum" ?  e.data.selectedValue : e.data;
-        return memo;
-      }, {});
+      return this.state.controlStateObject;
     },
 
-    getInitialPropPanelControlState: function(componentName){
+
+    getInitialPropPanelControlStateObject: function(componentName){
 
       var e = this.getComponentModelByName(componentName);
+      var ret = {};
 
-      return Object.keys(e.props).map(function(key){
-
+      Object.keys(e.props).map(function(key) {
         var inferredType;
 
         if(Array.isArray(e.props[key])){
@@ -244,45 +143,37 @@ module.exports = function(React){
           inferredType = "object";
         }
 
-        var ret = {
-          name: key,
-          type: inferredType ? inferredType : e.props[key].type,
-          isRequired: e.props[key].required,
-          data: this.getDefaultDataForPropType(e.props[key])
-        };
-        return ret;
-      }.bind(this))
+        ret[key] = this.getDefaultDataForPropType(e.props[key]);
+
+      }.bind(this));
+
+      console.log(ret);
+
+      return ret;
     },
 
     handleComponentNavigate: function(name){
       this.setState({
-        controlState: this.getInitialPropPanelControlState(name),
+        controlStateObject: this.getInitialPropPanelControlStateObject(name),
         selectedComponent: name,
       }, function(){ this.tryMountChild()});
     },
 
     handleBack: function(){
       this.setState({
-        controlState: [],
+        controlStateObject: {},
         selectedComponent: null
       });
     },
 
-    handleInputChange: function(field, data){
+    handleInputChangeObject: function(newObject){
+      var cso = this.state.controlStateObject;
 
-      var controlState = this.state.controlState.filter(function(e){
-        return e.name === field;
-      })[0];
+      for (var key in newObject) {
+        cso[key] = newObject[key];
+      }
 
-      if (controlState.type === "enum"){
-        controlState.data.selectedValue = data;
-      }
-      else{
-        controlState.data = data;
-      }
-      this.setState({controlState: this.state.controlState},
-        function(){ this.tryMountChild()}
-      );
+      this.setState({controlStateObject: cso}, this.tryMountChild);
     },
 
     getComponentModelByName: function(name){
@@ -305,14 +196,14 @@ module.exports = function(React){
       catch (err) {
         React.render(
           <div>
-          <div className="ui-alert-box whoops">
-            <span className="icon-exclamation-1"></span>
-            <strong>{err.toString()}</strong>
-            {err.stack}
-          </div>
-            <p>Please refer to the component at the path in the exception above and ensure it has all neccessary propTypes defined</p>
-            <p>This tool relies on accurate propTypes to be able to provide data needed to render a component.</p>
-          </div>,
+            <div className="ui-alert-box whoops">
+              <span className="icon-exclamation-1"></span>
+              <strong>{err.toString()}</strong>
+              {err.stack}
+            </div>
+              <p>Please refer to the component at the path in the exception above and ensure it has all neccessary propTypes defined</p>
+              <p>This tool relies on accurate propTypes to be able to provide data needed to render a component.</p>
+            </div>,
           mountNode
         );
       }
@@ -334,11 +225,7 @@ module.exports = function(React){
 
               {this.state.selectedComponent ?
                 <div className="props-panel">
-                  {this.state.controlState.map(function(e){
-                    return(
-                      <TypedInput onInputChange={this.handleInputChange} controlStateDescriptor={e} />
-                    )
-                  }.bind(this))}
+                  <PropsPanel propsObject={this.state.controlStateObject} onInputChange={this.handleInputChangeObject} />
                 </div>
                   :
                 __AUTOCAT_COMPONENTS__.map(function (C) {
