@@ -19,7 +19,34 @@ var AutoCat = React.createClass({
     };
   },
 
-  getDefaultDataForPropType: function (propSchema) {
+  handleComponentNavigate: function (name) {
+    this.setState({
+      controlStateObject: this._getInitialPropPanelControlStateObject(name),
+      selectedComponent: name
+    }, function () {
+      this._tryMountChild()
+    });
+  },
+
+  handleBack: function () {
+    this.setState({
+      controlStateObject: {},
+      selectedComponent: null
+    });
+  },
+
+  handleInputChangeObject: function (newObject) {
+    var cso = this.state.controlStateObject;
+
+    for (var key in newObject) {
+      cso[key] = newObject[key];
+    }
+
+    this.setState({controlStateObject: cso}, this.tryMountChild);
+  },
+
+
+  _getDefaultDataForPropType: function (propSchema) {
 
     //Objects
     if (!propSchema.type && !Array.isArray(propSchema)) {
@@ -34,7 +61,7 @@ var AutoCat = React.createClass({
     if (Array.isArray(propSchema)) {
       //Get some multiplicity of test array data
       return [1, 2, 3].map(function (i) {
-        return this.getDefaultDataForPropType(propSchema[0]);
+        return this._getDefaultDataForPropType(propSchema[0]);
       }.bind(this));
     }
 
@@ -57,59 +84,32 @@ var AutoCat = React.createClass({
     })[propSchema.type];
   },
 
-  getPropsObject: function () {
+  _getPropsObject: function () {
     return this.state.controlStateObject;
   },
 
-  getInitialPropPanelControlStateObject: function (componentName) {
+  _getInitialPropPanelControlStateObject: function (componentName) {
 
-    var e = this.getComponentModelByName(componentName);
+    var e = this._getComponentModelByName(componentName);
     var ret = {};
 
     Object.keys(e.props).map(function (key) {
-      ret[key] = this.getDefaultDataForPropType(e.props[key]);
+      ret[key] = this._getDefaultDataForPropType(e.props[key]);
     }.bind(this));
 
     return ret;
   },
 
-  handleComponentNavigate: function (name) {
-
-    this.setState({
-      controlStateObject: this.getInitialPropPanelControlStateObject(name),
-      selectedComponent: name
-    }, function () {
-      this.tryMountChild()
-    });
-  },
-
-  handleBack: function () {
-    this.setState({
-      controlStateObject: {},
-      selectedComponent: null
-    });
-  },
-
-  handleInputChangeObject: function (newObject) {
-    var cso = this.state.controlStateObject;
-
-    for (var key in newObject) {
-      cso[key] = newObject[key];
-    }
-
-    this.setState({controlStateObject: cso}, this.tryMountChild);
-  },
-
-  getComponentModelByName: function (name) {
+  _getComponentModelByName: function (name) {
     return __AUTOCAT_COMPONENTS__.filter(function (c) {
       return c.componentName === name;
     }.bind(this))[0];
   },
 
-  tryMountChild: function () {
+  _tryMountChild: function () {
     var mountNode = this.refs.mount.getDOMNode();
-    var CurrentComponentModel = this.getComponentModelByName(this.state.selectedComponent);
-    var curProps = this.getPropsObject();
+    var CurrentComponentModel = this._getComponentModelByName(this.state.selectedComponent);
+    var curProps = this._getPropsObject();
 
     try {
       React.render(
@@ -135,8 +135,8 @@ var AutoCat = React.createClass({
 
   render: function () {
 
-    var currentComponent = this.getComponentModelByName(this.state.selectedComponent);
-    var currentComponentProps = this.getPropsObject();
+    var currentComponent = this._getComponentModelByName(this.state.selectedComponent);
+    var currentComponentProps = this._getPropsObject();
 
     return (
       <div>
@@ -146,14 +146,12 @@ var AutoCat = React.createClass({
               <div onClick={this.handleBack} className="ui-panel__back"> Back</div>
               <h3>{this.state.selectedComponent || "All Components"}</h3>
             </header>
-
               {this.state.selectedComponent ?
                 <div className="props-panel">
                   <PropsPanel propsObject={this.state.controlStateObject} onInputChange={this.handleInputChangeObject} />
                 </div>
                 :
                 __AUTOCAT_COMPONENTS__.map(function (C) {
-
                   return (
                     <a
                       className={"ui-nav-list__item " + (C.componentName === this.state.selectedComponent ? "is-selected" : "") }
@@ -163,7 +161,6 @@ var AutoCat = React.createClass({
                   );
                 }.bind(this))}
           </nav>
-
           <div>
             {currentComponent && currentComponent.childComponents.length > 0 ?
               <div>
@@ -180,7 +177,6 @@ var AutoCat = React.createClass({
               </div>
               :
               null}
-
              {!!currentComponent ?
                <div>
                  <h3>Used Props </h3>
@@ -194,14 +190,10 @@ var AutoCat = React.createClass({
                </div>
                :
                null}
-
           </div>
-
-
         </aside>
         <section className="ac-section">
             { this.state.selectedComponent ?
-
               <div className="component-harness">
                 <div className="component-harness__metadata">
                   <h5>
