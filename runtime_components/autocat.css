@@ -45,3 +45,10 @@ section.ac-section {
 .props-panel{
     padding: 14px;
 }
+
+
+.logo{
+    background-image: url(./autocatlogo.png);
+    height: 350px;
+    width: 350px;
+}

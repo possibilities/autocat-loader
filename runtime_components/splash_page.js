@@ -9,6 +9,11 @@ var SplashPage = React.createClass({
     return (
       <div className="ui-null">
         <h1> AutoCat </h1>
+
+        <div className="logo">
+
+        </div>
+
       </div>
     );
   }
