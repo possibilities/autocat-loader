@@ -52,7 +52,7 @@ var AutoCat = React.createClass({
     if (!propSchema.type && !Array.isArray(propSchema)) {
       var obj = {};
       Object.keys(propSchema).map(function (key) {
-        obj[key] = this.getDefaultDataForPropType(propSchema[key]);
+        obj[key] = this._getDefaultDataForPropType(propSchema[key]);
       }.bind(this));
       return obj;
     }
