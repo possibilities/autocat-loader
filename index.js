@@ -70,7 +70,6 @@ module.exports = function(source, map) {
       //To override this behavior of traversing the directory that the entry module is located in
       var componentPath = this.context;
 
-
       return entryModule(source, componentPath);
     }
 

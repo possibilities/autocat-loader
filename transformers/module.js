@@ -241,7 +241,8 @@ module.exports = function(source, filename, fullpath) {
 
   var ast = esprima.parse(source);
 
-  var componentName = "";
+  var componentName;
+  var componentInstanceIdentifier;
   var childComponents;
   var usedProps;
   var propsSchema;
@@ -258,6 +259,11 @@ module.exports = function(source, filename, fullpath) {
         componentName =  {
           "type": "Literal",
           "value": node.declarations[0].id.name
+        };
+
+        componentInstanceIdentifier = {
+          "type": "Identifier",
+          "name": node.declarations[0].id.name
         };
 
         childComponents = [];
@@ -303,9 +309,18 @@ module.exports = function(source, filename, fullpath) {
               "type": "Property",
               "key": {
                 "type": "Identifier",
-                "name": "component"
+                "name": "componentName"
               },
               "value": componentName,
+              "kind": "init"
+            },
+            {
+              "type": "Property",
+              "key": {
+                "type": "Identifier",
+                "name": "component"
+              },
+              "value": componentInstanceIdentifier,
               "kind": "init"
             },
             {

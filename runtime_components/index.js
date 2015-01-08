@@ -102,7 +102,7 @@ var AutoCat = React.createClass({
 
   getComponentModelByName: function (name) {
     return __AUTOCAT_COMPONENTS__.filter(function (c) {
-      return c.component === name;
+      return c.componentName === name;
     }.bind(this))[0];
   },
 
@@ -156,9 +156,9 @@ var AutoCat = React.createClass({
 
                   return (
                     <a
-                      className={"ui-nav-list__item " + (C.component === this.state.selectedComponent ? "is-selected" : "") }
-                      onClick={this.handleComponentNavigate.bind(null, C.component)}>
-                    {C.component + " - " + C.fileName}
+                      className={"ui-nav-list__item " + (C.componentName === this.state.selectedComponent ? "is-selected" : "") }
+                      onClick={this.handleComponentNavigate.bind(null, C.componentName)}>
+                    {C.componentName + " - " + C.fileName}
                     </a>
                   );
                 }.bind(this))}
