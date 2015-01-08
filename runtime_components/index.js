@@ -143,7 +143,7 @@ var AutoCat = React.createClass({
         <aside className="ac-sidebar">
           <nav className="ui-nav-list">
             <header className="ui-panel__header">
-              <div onClick={this.handleBack} className="ui-panel__back"></div>
+              <div onClick={this.handleBack} className="ui-panel__back"> Back</div>
               <h3>{this.state.selectedComponent || "All Components"}</h3>
             </header>
 

@@ -1,5 +1,10 @@
 * { box-sizing: border-box; }
 
+
+body{
+    background: white;
+}
+
 aside.ac-sidebar {
     overflow: scroll;
     border-right: 1px solid #ccc;
@@ -14,6 +19,19 @@ aside.ac-sidebar {
 section.ac-section {
     padding-left: 30%;
 }
+
+
+.ui-panel__back {
+    color: #ccc;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    height: 42px;
+    width: 42px;
+    cursor: pointer;
+    text-align: center;
+}
+
 
 .component-harness__metadata{
     background-color: #f7f7f7;

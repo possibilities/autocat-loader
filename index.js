@@ -13,7 +13,6 @@ var transformModule = require('./transformers/module');
 var transformEntryModule = require('./transformers/entry_module');
 
 
-
 function getEntryArray(entry){
   if(_.isString(entry)){
     return [entry];
