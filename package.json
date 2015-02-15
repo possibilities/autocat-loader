@@ -15,7 +15,7 @@
     "estraverse": "^1.9.0",
     "jsoneditor": "^3.1.2",
     "loader-utils": "^0.2.5",
-    "lodash": "^2.4.1",
+    "lodash": "^2.4.1"
   },
   "peerDependencies": {
     "react": "0.12.x"
